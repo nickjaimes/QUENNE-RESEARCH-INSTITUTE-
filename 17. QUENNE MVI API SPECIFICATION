@@ -1,0 +1,2021 @@
+QUENNE MVI API SPECIFICATION
+
+Version: 1.0-alpha | January 2026
+
+---
+
+TABLE OF CONTENTS
+
+1. Overview
+2. Authentication & Security
+3. Quantum Layer API
+4. Neuromorphic Layer API
+5. Edge Layer API
+6. Homeostasis Layer API
+7. Integration Layer API
+8. Data & Monitoring API
+9. Error Handling
+10. Rate Limiting
+11. WebSocket & Streaming
+
+---
+
+1. OVERVIEW
+
+1.1 API Philosophy
+
+· RESTful design with consistent resource naming
+· Versioned endpoints (/api/v1/)
+· JSON for request/response bodies
+· Unified error handling with standard HTTP codes
+· Comprehensive documentation with OpenAPI 3.0
+
+1.2 Base URLs
+
+```
+Development:     http://localhost:8080/api/v1
+Staging:         https://api.staging.quenne.institute.jp/api/v1
+Production:      https://api.quenne.institute.jp/api/v1
+
+Layer-Specific:
+Quantum:         http://quantum.local:8080/api/v1
+Neuromorphic:    http://neuromorphic.local:8081/api/v1
+Edge:            http://edge.local:8082/api/v1
+Homeostasis:     http://homeostasis.local:8083/api/v1
+Integration:     http://integration.local:8084/api/v1
+```
+
+1.3 Common Headers
+
+```http
+# Required for all requests
+Authorization: Bearer {api_token}
+Content-Type: application/json
+Accept: application/json
+X-Request-ID: {uuid_v4}
+X-API-Version: 1.0
+
+# Optional
+X-Time-Sync: {nanoseconds_since_epoch}
+X-Energy-Budget: {joules}
+X-Latency-Requirement: {milliseconds}
+```
+
+1.4 Standard Response Format
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "request_id": "req_abc123",
+    "timestamp": 1704470400000000000,
+    "version": "1.0",
+    "energy_consumed": 0.005,
+    "processing_time": 0.015
+  },
+  "links": {
+    "self": "/api/v1/resource/id",
+    "next": "/api/v1/resource/next",
+    "prev": "/api/v1/resource/prev"
+  }
+}
+```
+
+---
+
+2. AUTHENTICATION & SECURITY
+
+2.1 Authentication Methods
+
+JWT Token Authentication
+
+```http
+POST /auth/token
+Content-Type: application/json
+
+{
+  "grant_type": "client_credentials",
+  "client_id": "your_client_id",
+  "client_secret": "your_client_secret",
+  "scope": "quantum:read neuromorphic:write"
+}
+```
+
+Response:
+
+```json
+{
+  "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "def50200...",
+  "scope": "quantum:read neuromorphic:write edge:execute",
+  "energy_budget": 1000,
+  "rate_limit": 1000
+}
+```
+
+Quantum-Enhanced Authentication (QEA)
+
+```http
+POST /auth/qea-challenge
+Content-Type: application/json
+
+{
+  "client_id": "your_client_id",
+  "quantum_state": "base64_encoded_quantum_state"
+}
+```
+
+2.2 Scope Permissions
+
+```yaml
+Scopes:
+  quantum:
+    read:    Read quantum state information
+    write:   Create/modify quantum circuits
+    execute: Run quantum circuits
+    admin:   Manage quantum backends
+  
+  neuromorphic:
+    read:    Read network state
+    write:   Modify network configuration
+    train:   Train neuromorphic networks
+    admin:   Manage neuromorphic hardware
+  
+  edge:
+    read:    Read sensor data
+    write:   Send commands to actuators
+    execute: Execute edge tasks
+    admin:   Manage edge devices
+  
+  homeostasis:
+    read:    Read system metrics
+    write:   Adjust parameters
+    admin:   Configure homeostasis
+  
+  integration:
+    execute: Execute cross-layer tasks
+    monitor: Monitor system state
+    admin:   Manage integration
+```
+
+2.3 API Key Rotation
+
+```python
+# Python example for key rotation
+import quenne
+
+client = quenne.Client(
+    api_key="primary_key",
+    backup_key="secondary_key",
+    auto_rotate=True,
+    rotation_interval=86400  # 24 hours
+)
+
+# Auto-rotates keys when primary expires
+response = client.quantum.execute_circuit(circuit)
+```
+
+---
+
+3. QUANTUM LAYER API
+
+3.1 Backend Management
+
+List Available Backends
+
+```http
+GET /quantum/backends
+```
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "id": "ibmq_quito",
+      "name": "IBM Q Quito",
+      "provider": "IBM",
+      "status": "available",
+      "qubits": 5,
+      "coherence_time": 100,
+      "gate_fidelity": 0.995,
+      "queue_depth": 3,
+      "estimated_wait": 120
+    },
+    {
+      "id": "simulator_40q",
+      "name": "QUENNE Quantum Simulator",
+      "provider": "QUENNE",
+      "status": "available",
+      "qubits": 40,
+      "coherence_time": "inf",
+      "gate_fidelity": 1.0,
+      "queue_depth": 0,
+      "estimated_wait": 0
+    }
+  ],
+  "meta": {
+    "total_backends": 2,
+    "available_backends": 2
+  }
+}
+```
+
+Get Backend Details
+
+```http
+GET /quantum/backends/{backend_id}
+```
+
+3.2 Quantum Circuit Management
+
+Create Quantum Circuit
+
+```http
+POST /quantum/circuits
+Content-Type: application/json
+
+{
+  "name": "associative_memory_8q",
+  "description": "8-qubit associative memory circuit",
+  "qasm": "OPENQASM 2.0;\ninclude \"qelib1.inc\";\nqreg q[8];\ncreg c[8];\nh q[0];\ncx q[0], q[1];\n...",
+  "parameters": {
+    "num_qubits": 8,
+    "depth": 50,
+    "optimization_level": 3,
+    "noise_model": "ibmq_quito_noise"
+  },
+  "metadata": {
+    "pattern_size": 256,
+    "capacity": 100
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "circuit_id": "circ_abc123def456",
+    "name": "associative_memory_8q",
+    "hash": "sha256:abc123...",
+    "qubits": 8,
+    "depth": 50,
+    "gates": 150,
+    "created_at": "2026-01-05T10:30:00Z",
+    "estimated_run_time": 0.005,
+    "estimated_energy": 0.001
+  }
+}
+```
+
+Execute Circuit
+
+```http
+POST /quantum/circuits/{circuit_id}/execute
+Content-Type: application/json
+
+{
+  "backend_id": "simulator_40q",
+  "shots": 1024,
+  "optimization": {
+    "level": 3,
+    "noise_adaptive": true
+  },
+  "noise_model": {
+    "type": "depolarizing",
+    "single_qubit_error": 0.001,
+    "two_qubit_error": 0.01
+  },
+  "execution_constraints": {
+    "max_time": 30,
+    "max_energy": 0.1,
+    "required_fidelity": 0.95
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "job_id": "job_xyz789",
+    "status": "queued",
+    "estimated_completion": "2026-01-05T10:30:05Z",
+    "queue_position": 1,
+    "backend": "simulator_40q",
+    "circuit_hash": "sha256:abc123...",
+    "monitor_url": "/quantum/jobs/job_xyz789/monitor"
+  }
+}
+```
+
+3.3 Quantum State Inference
+
+Perform Inference
+
+```http
+POST /quantum/inference
+Content-Type: application/json
+
+{
+  "input_data": {
+    "type": "sensor_stream",
+    "data": [0.1, 0.2, 0.3, 0.4, ...],
+    "encoding": "amplitude"
+  },
+  "inference_type": "probabilistic_reasoning",
+  "model": {
+    "type": "quantum_bayesian",
+    "prior": [0.25, 0.25, 0.25, 0.25],
+    "evidence": [0.1, 0.2, 0.3, 0.4]
+  },
+  "parameters": {
+    "num_hypotheses": 4,
+    "confidence_threshold": 0.8,
+    "return_statevector": true
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "inference_id": "inf_123456",
+    "result": {
+      "hypotheses": [
+        {"id": 0, "probability": 0.45, "confidence": 0.92},
+        {"id": 1, "probability": 0.30, "confidence": 0.85},
+        {"id": 2, "probability": 0.20, "confidence": 0.78},
+        {"id": 3, "probability": 0.05, "confidence": 0.65}
+      ],
+      "most_probable": 0,
+      "uncertainty": 0.15,
+      "statevector": "base64_encoded_statevector"
+    },
+    "metrics": {
+      "execution_time": 0.008,
+      "energy_consumed": 0.002,
+      "quantum_volume": 8,
+      "fidelity": 0.97
+    }
+  }
+}
+```
+
+3.4 Quantum Memory Operations
+
+Store Pattern
+
+```http
+POST /quantum/memory/patterns
+Content-Type: application/json
+
+{
+  "pattern": {
+    "id": "pattern_001",
+    "data": [0.1, 0.2, 0.3, ...],
+    "tags": ["anomaly", "sensor_failure"],
+    "metadata": {
+      "source": "edge_sensor_001",
+      "timestamp": "2026-01-05T10:30:00Z"
+    }
+  },
+  "encoding": {
+    "method": "amplitude",
+    "compression": "auto",
+    "error_correction": true
+  }
+}
+```
+
+Recall Pattern
+
+```http
+POST /quantum/memory/recall
+Content-Type: application/json
+
+{
+  "partial_pattern": [0.1, null, 0.3, null, ...],
+  "constraints": {
+    "min_similarity": 0.8,
+    "max_patterns": 5,
+    "timeout": 0.1
+  },
+  "options": {
+    "return_complete": true,
+    "include_similarity": true,
+    "include_metadata": true
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "recalled_patterns": [
+      {
+        "pattern_id": "pattern_001",
+        "similarity": 0.95,
+        "complete_pattern": [0.1, 0.2, 0.3, ...],
+        "metadata": { ... }
+      }
+    ],
+    "recall_time": 0.002,
+    "energy_per_pattern": 0.0001
+  }
+}
+```
+
+3.5 Real-time Monitoring
+
+WebSocket Connection
+
+```javascript
+// JavaScript WebSocket example
+const ws = new WebSocket('wss://api.quenne.institute.jp/quantum/ws');
+
+ws.onopen = () => {
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    channels: ['job_updates', 'backend_status', 'metrics']
+  }));
+};
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Quantum update:', data);
+};
+```
+
+WebSocket Message Format:
+
+```json
+{
+  "type": "job_update",
+  "timestamp": 1704470400000000000,
+  "data": {
+    "job_id": "job_xyz789",
+    "status": "running",
+    "progress": 0.75,
+    "estimated_remaining": 0.005,
+    "metrics": {
+      "fidelity": 0.98,
+      "coherence_loss": 0.01
+    }
+  }
+}
+```
+
+---
+
+4. NEUROMORPHIC LAYER API
+
+4.1 Network Management
+
+Create Spiking Network
+
+```http
+POST /neuromorphic/networks
+Content-Type: application/json
+
+{
+  "name": "associative_memory_10k",
+  "description": "10,000 neuron associative memory network",
+  "specification": {
+    "num_neurons": 10000,
+    "num_synapses": 1000000,
+    "neuron_model": "adaptive_lif",
+    "synapse_model": "stdp",
+    "connectivity": {
+      "type": "random",
+      "probability": 0.1,
+      "seed": 42
+    }
+  },
+  "initial_weights": {
+    "distribution": "normal",
+    "mean": 0.5,
+    "std": 0.1
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "network_id": "net_abc123",
+    "name": "associative_memory_10k",
+    "status": "created",
+    "neurons": {
+      "total": 10000,
+      "excitatory": 8000,
+      "inhibitory": 2000
+    },
+    "synapses": 1000000,
+    "memory_footprint": 524288000,
+    "estimated_power": 0.05
+  }
+}
+```
+
+Configure Network Parameters
+
+```http
+PUT /neuromorphic/networks/{network_id}/configuration
+Content-Type: application/json
+
+{
+  "learning": {
+    "enabled": true,
+    "rule": "stdp",
+    "parameters": {
+      "alpha": 0.01,
+      "tau_plus": 20,
+      "tau_minus": 20
+    }
+  },
+  "homeostasis": {
+    "target_rate": 10,
+    "regulation_strength": 0.1
+  },
+  "simulation": {
+    "time_step": 0.001,
+    "duration": 1.0
+  }
+}
+```
+
+4.2 Pattern Processing
+
+Process Input Patterns
+
+```http
+POST /neuromorphic/networks/{network_id}/process
+Content-Type: application/json
+
+{
+  "input_patterns": [
+    {
+      "pattern_id": "input_001",
+      "neurons": [0, 1, 2, 3, 4],
+      "spike_times": [0.001, 0.002, 0.003, 0.004, 0.005],
+      "weights": [1.0, 0.8, 0.6, 0.4, 0.2]
+    }
+  ],
+  "simulation": {
+    "duration": 0.1,
+    "record_spikes": true,
+    "record_voltages": false,
+    "record_weights": true
+  },
+  "constraints": {
+    "max_time": 0.5,
+    "max_energy": 0.01
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "simulation_id": "sim_123456",
+    "output_patterns": [
+      {
+        "pattern_id": "output_001",
+        "neurons": [100, 101, 102, 103],
+        "spike_times": [0.051, 0.052, 0.053, 0.054],
+        "firing_rate": 40
+      }
+    ],
+    "metrics": {
+      "simulation_time": 0.035,
+      "total_spikes": 45000,
+      "average_firing_rate": 15.2,
+      "energy_consumed": 0.005,
+      "plasticity_updates": 1200
+    },
+    "recordings": {
+      "spikes_url": "/neuromorphic/recordings/sim_123456/spikes",
+      "weights_url": "/neuromorphic/recordings/sim_123456/weights"
+    }
+  }
+}
+```
+
+4.3 Learning & Training
+
+Train Network
+
+```http
+POST /neuromorphic/networks/{network_id}/train
+Content-Type: application/json
+
+{
+  "training_data": {
+    "patterns": [
+      {
+        "input": [0, 1, 0, 1, ...],
+        "target": [1, 0, 1, 0, ...],
+        "label": "pattern_a"
+      }
+    ],
+    "validation_split": 0.2,
+    "shuffle": true
+  },
+  "training_parameters": {
+    "epochs": 100,
+    "batch_size": 32,
+    "learning_rate": 0.01,
+    "stopping_criteria": {
+      "max_accuracy": 0.95,
+      "min_improvement": 0.001,
+      "patience": 10
+    }
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "training_id": "train_789",
+    "status": "running",
+    "current_epoch": 5,
+    "metrics": {
+      "training_loss": 0.15,
+      "validation_accuracy": 0.82,
+      "learning_rate": 0.01,
+      "plasticity_changes": 45000
+    },
+    "monitor_url": "/neuromorphic/training/train_789/monitor"
+  }
+}
+```
+
+4.4 Associative Memory Operations
+
+Store Pattern in Memory
+
+```http
+POST /neuromorphic/memory/patterns
+Content-Type: application/json
+
+{
+  "network_id": "net_abc123",
+  "pattern": {
+    "id": "memory_pattern_001",
+    "data": [0.1, 0.2, 0.3, ...],
+    "encoding": "rate_based",
+    "strength": 0.8
+  },
+  "associations": ["pattern_002", "pattern_003"],
+  "metadata": {
+    "created_by": "quantum_layer",
+    "source_confidence": 0.95
+  }
+}
+```
+
+Recall from Memory
+
+```http
+POST /neuromorphic/memory/recall
+Content-Type: application/json
+
+{
+  "network_id": "net_abc123",
+  "cue_pattern": {
+    "partial": [0.1, null, 0.3, null, ...],
+    "confidence": [0.9, 0.0, 0.8, 0.0, ...]
+  },
+  "recall_parameters": {
+    "method": "pattern_completion",
+    "iterations": 10,
+    "threshold": 0.7,
+    "noise_tolerance": 0.1
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "recalled_patterns": [
+      {
+        "pattern_id": "memory_pattern_001",
+        "similarity": 0.92,
+        "completion": 1.0,
+        "latency": 0.003,
+        "energy": 0.0005
+      }
+    ],
+    "recall_metrics": {
+      "total_time": 0.015,
+      "total_energy": 0.002,
+      "neurons_activated": 450,
+      "synapses_accessed": 12000
+    }
+  }
+}
+```
+
+---
+
+5. EDGE LAYER API
+
+5.1 Device Management
+
+List Edge Devices
+
+```http
+GET /edge/devices
+```
+
+Response:
+
+```json
+{
+  "data": [
+    {
+      "device_id": "robot_001",
+      "name": "TurtleBot3",
+      "type": "ground_robot",
+      "status": "available",
+      "capabilities": ["navigation", "object_detection", "manipulation"],
+      "location": {
+        "x": 1.5,
+        "y": 2.3,
+        "z": 0.0,
+        "orientation": [0, 0, 0, 1]
+      },
+      "battery": 85,
+      "network": {
+        "signal_strength": -50,
+        "latency": 0.005
+      }
+    }
+  ],
+  "meta": {
+    "total_devices": 10,
+    "available_devices": 8
+  }
+}
+```
+
+5.2 Sensor Data Collection
+
+Read Sensor Data
+
+```http
+POST /edge/devices/{device_id}/sensors/read
+Content-Type: application/json
+
+{
+  "sensors": ["camera", "lidar", "imu"],
+  "parameters": {
+    "camera": {
+      "resolution": [640, 480],
+      "format": "jpeg",
+      "fps": 30
+    },
+    "lidar": {
+      "range": 10.0,
+      "resolution": 0.01
+    },
+    "imu": {
+      "rate": 100
+    }
+  },
+  "duration": 1.0,
+  "compression": "auto"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "reading_id": "read_123456",
+    "timestamp": 1704470400000000000,
+    "sensor_data": {
+      "camera": {
+        "frames": [
+          {
+            "frame_number": 0,
+            "timestamp": 1704470400000000000,
+            "data_url": "/edge/data/read_123456/camera/frame_0",
+            "format": "jpeg",
+            "size": 153600
+          }
+        ],
+        "fps": 30,
+        "resolution": [640, 480]
+      },
+      "lidar": {
+        "points": [
+          {"x": 1.0, "y": 0.5, "z": 0.0, "intensity": 0.8},
+          {"x": 1.1, "y": 0.6, "z": 0.0, "intensity": 0.7}
+        ],
+        "point_count": 16384,
+        "range": 10.0
+      },
+      "imu": {
+        "acceleration": [0.0, 0.0, 9.81],
+        "gyroscope": [0.01, -0.02, 0.03],
+        "magnetometer": [0.0, 0.0, 1.0],
+        "temperature": 25.0
+      }
+    },
+    "data_size": 5242880,
+    "collection_time": 1.002
+  }
+}
+```
+
+5.3 Actuation & Control
+
+Send Control Commands
+
+```http
+POST /edge/devices/{device_id}/actuators/control
+Content-Type: application/json
+
+{
+  "commands": [
+    {
+      "actuator": "wheels",
+      "action": "set_velocity",
+      "parameters": {
+        "linear": 0.5,
+        "angular": 0.1
+      },
+      "constraints": {
+        "max_acceleration": 1.0,
+        "safety_bounds": {
+          "min_x": -10,
+          "max_x": 10,
+          "min_y": -10,
+          "max_y": 10
+        }
+      }
+    }
+  ],
+  "control_mode": "velocity",
+  "duration": 2.0,
+  "feedback_required": true
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "command_id": "cmd_789012",
+    "status": "executing",
+    "estimated_completion": 1704470402000000000,
+    "actuator_status": {
+      "wheels": {
+        "current_velocity": {"linear": 0.1, "angular": 0.0},
+        "target_velocity": {"linear": 0.5, "angular": 0.1},
+        "acceleration": 0.2
+      }
+    },
+    "safety_status": {
+      "within_bounds": true,
+      "obstacle_distance": 2.5,
+      "emergency_stop": false
+    }
+  }
+}
+```
+
+5.4 Task Execution
+
+Execute Edge Task
+
+```http
+POST /edge/tasks
+Content-Type: application/json
+
+{
+  "task_type": "navigation",
+  "device_id": "robot_001",
+  "parameters": {
+    "goal": {
+      "x": 5.0,
+      "y": 3.0,
+      "z": 0.0,
+      "tolerance": 0.1
+    },
+    "path_planning": {
+      "algorithm": "a_star",
+      "obstacle_avoidance": true,
+      "replan_interval": 1.0
+    }
+  },
+  "constraints": {
+    "max_time": 30,
+    "max_energy": 50,
+    "safety_requirements": {
+      "min_obstacle_distance": 0.5,
+      "max_speed": 1.0
+    }
+  },
+  "monitoring": {
+    "update_interval": 0.1,
+    "metrics": ["position", "velocity", "energy", "safety"]
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "task_id": "task_345678",
+    "status": "planning",
+    "estimated_duration": 25.5,
+    "estimated_energy": 35.2,
+    "current_step": "path_planning",
+    "progress": 0.1,
+    "monitor_url": "/edge/tasks/task_345678/monitor",
+    "control_url": "/edge/tasks/task_345678/control"
+  }
+}
+```
+
+5.5 Digital Twin Simulation
+
+Create Digital Twin
+
+```http
+POST /edge/simulation/twins
+Content-Type: application/json
+
+{
+  "name": "warehouse_twin",
+  "description": "Digital twin of warehouse environment",
+  "environment": {
+    "type": "warehouse",
+    "dimensions": [50, 30, 10],
+    "objects": [
+      {
+        "type": "shelf",
+        "position": [10, 5, 0],
+        "dimensions": [2, 1, 3]
+      }
+    ]
+  },
+  "robots": [
+    {
+      "device_id": "robot_001",
+      "model": "TurtleBot3",
+      "initial_position": [0, 0, 0],
+      "capabilities": ["navigation", "lifting"]
+    }
+  ],
+  "physics": {
+    "engine": "bullet",
+    "gravity": 9.81,
+    "time_step": 0.01
+  }
+}
+```
+
+Run Simulation
+
+```http
+POST /edge/simulation/twins/{twin_id}/run
+Content-Type: application/json
+
+{
+  "duration": 10.0,
+  "speed": 1.0,
+  "record_data": true,
+  "data_types": ["positions", "velocities", "collisions", "sensor_readings"],
+  "real_time": true
+}
+```
+
+---
+
+6. HOMEOSTASIS LAYER API
+
+6.1 System Monitoring
+
+Get System Health
+
+```http
+GET /homeostasis/health
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "overall_health": "green",
+    "timestamp": 1704470400000000000,
+    "layers": {
+      "quantum": {
+        "health": "green",
+        "metrics": {
+          "fidelity": 0.98,
+          "coherence_time": 95,
+          "gate_error": 0.002,
+          "temperature": 15.2,
+          "power": 5.1
+        },
+        "alerts": []
+      },
+      "neuromorphic": {
+        "health": "yellow",
+        "metrics": {
+          "firing_rate": 9.8,
+          "spike_count": 45000,
+          "learning_rate": 0.01,
+          "temperature": 32.1,
+          "power": 0.05
+        },
+        "alerts": ["temperature_high"]
+      },
+      "edge": {
+        "health": "green",
+        "metrics": {
+          "latency": 0.008,
+          "throughput": 1000,
+          "battery": 85,
+          "network_latency": 0.005,
+          "power": 12.3
+        },
+        "alerts": []
+      }
+    },
+    "system_metrics": {
+      "total_power": 17.45,
+      "total_temperature": 28.5,
+      "availability": 0.999,
+      "energy_efficiency": 0.95
+    }
+  }
+}
+```
+
+6.2 Setpoint Management
+
+Get Current Setpoints
+
+```http
+GET /homeostasis/setpoints
+```
+
+Update Setpoints
+
+```http
+PUT /homeostasis/setpoints
+Content-Type: application/json
+
+{
+  "setpoints": {
+    "quantum": {
+      "fidelity": 0.99,
+      "coherence_time": 100,
+      "temperature": 15.0,
+      "power": 5.0
+    },
+    "neuromorphic": {
+      "firing_rate": 10.0,
+      "learning_rate": 0.01,
+      "temperature": 30.0,
+      "power": 0.05
+    },
+    "edge": {
+      "latency": 0.01,
+      "battery_min": 20,
+      "network_latency": 0.01,
+      "power": 10.0
+    },
+    "system": {
+      "total_power": 20.0,
+      "max_temperature": 35.0,
+      "availability": 0.999
+    }
+  },
+  "adjustment_strategy": "gradual",
+  "adjustment_rate": 0.1,
+  "safety_limits": {
+    "max_adjustment": 0.2,
+    "cooldown_period": 1.0
+  }
+}
+```
+
+6.3 Anomaly Detection
+
+Report Anomaly
+
+```http
+POST /homeostasis/anomalies
+Content-Type: application/json
+
+{
+  "layer": "neuromorphic",
+  "component": "network_001",
+  "anomaly_type": "temperature_high",
+  "severity": "warning",
+  "metrics": {
+    "temperature": 35.2,
+    "threshold": 30.0,
+    "duration": 10.5
+  },
+  "context": {
+    "recent_activity": "high_load_training",
+    "environment": "lab_ambient_25c"
+  }
+}
+```
+
+Get Anomaly Response
+
+```http
+POST /homeostasis/anomalies/response
+Content-Type: application/json
+
+{
+  "anomaly_id": "anom_123456",
+  "requested_actions": ["diagnose", "mitigate", "report"],
+  "response_constraints": {
+    "max_response_time": 1.0,
+    "allowed_disruption": "low",
+    "preserve_data": true
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "response_id": "resp_789012",
+    "actions": [
+      {
+        "action": "reduce_load",
+        "layer": "neuromorphic",
+        "parameters": {
+          "reduction_factor": 0.5,
+          "duration": 30.0
+        },
+        "estimated_effect": "temperature_drop_2c"
+      },
+      {
+        "action": "increase_cooling",
+        "layer": "system",
+        "parameters": {
+          "fan_speed": 80,
+          "duration": 60.0
+        }
+      }
+    ],
+    "expected_outcome": {
+      "temperature_reduction": 3.0,
+      "time_to_recovery": 30.0,
+      "performance_impact": 0.1
+    },
+    "monitor_url": "/homeostasis/response/resp_789012/monitor"
+  }
+}
+```
+
+6.4 Security Monitoring
+
+Security Scan
+
+```http
+POST /homeostasis/security/scan
+Content-Type: application/json
+
+{
+  "scan_type": "comprehensive",
+  "targets": ["quantum", "neuromorphic", "edge", "network"],
+  "intensity": "deep",
+  "allowed_disruption": "none",
+  "report_format": "detailed"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "scan_id": "scan_345678",
+    "status": "running",
+    "estimated_completion": 1704470405000000000,
+    "current_target": "quantum",
+    "progress": 0.25,
+    "findings_so_far": [],
+    "monitor_url": "/homeostasis/security/scans/scan_345678"
+  }
+}
+```
+
+---
+
+7. INTEGRATION LAYER API
+
+7.1 Cross-Layer Task Execution
+
+Execute Cognitive Task
+
+```http
+POST /integration/tasks
+Content-Type: application/json
+
+{
+  "task_type": "anomaly_detection",
+  "description": "Detect anomalies in sensor data using full QUENNE stack",
+  "data_source": {
+    "type": "edge_sensor",
+    "device_id": "sensor_001",
+    "stream_url": "/edge/streams/sensor_001"
+  },
+  "processing_pipeline": [
+    {
+      "layer": "edge",
+      "action": "preprocess_sensor_data",
+      "parameters": {
+        "filtering": "median",
+        "normalization": "minmax"
+      }
+    },
+    {
+      "layer": "quantum",
+      "action": "quantum_feature_extraction",
+      "parameters": {
+        "circuit": "feature_extraction_8q",
+        "shots": 1024
+      }
+    },
+    {
+      "layer": "neuromorphic",
+      "action": "pattern_recognition",
+      "parameters": {
+        "network": "anomaly_detector_10k",
+        "threshold": 0.8
+      }
+    },
+    {
+      "layer": "homeostasis",
+      "action": "system_health_check",
+      "parameters": {
+        "check_metrics": true,
+        "adjust_if_needed": true
+      }
+    }
+  ],
+  "constraints": {
+    "max_latency": 0.1,
+    "max_energy": 0.5,
+    "required_accuracy": 0.9,
+    "data_privacy": "high"
+  },
+  "monitoring": {
+    "update_interval": 0.01,
+    "metrics": ["latency", "accuracy", "energy", "fidelity"]
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "task_id": "integ_task_901234",
+    "status": "initializing",
+    "estimated_duration": 0.085,
+    "estimated_energy": 0.3,
+    "current_step": "edge_preprocessing",
+    "progress": 0.1,
+    "layer_status": {
+      "edge": "running",
+      "quantum": "queued",
+      "neuromorphic": "ready",
+      "homeostasis": "ready"
+    },
+    "monitor_url": "/integration/tasks/integ_task_901234/monitor",
+    "control_url": "/integration/tasks/integ_task_901234/control",
+    "results_url": "/integration/tasks/integ_task_901234/results"
+  }
+}
+```
+
+7.2 Protocol Management
+
+Get Protocol Status
+
+```http
+GET /integration/protocols
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "protocols": [
+      {
+        "name": "QNI",
+        "version": "1.0",
+        "status": "active",
+        "throughput": 400,
+        "latency": 0.000001,
+        "error_rate": 0.0001,
+        "connections": {
+          "quantum": ["simulator_40q", "ibmq_quito"],
+          "neuromorphic": ["network_001", "network_002"]
+        }
+      },
+      {
+        "name": "NEI",
+        "version": "1.0",
+        "status": "active",
+        "throughput": 1000,
+        "latency": 0.001,
+        "error_rate": 0.001,
+        "connections": {
+          "neuromorphic": ["network_001"],
+          "edge": ["robot_001", "robot_002"]
+        }
+      }
+    ]
+  }
+}
+```
+
+Configure Protocol
+
+```http
+PUT /integration/protocols/{protocol_name}
+Content-Type: application/json
+
+{
+  "version": "1.1",
+  "parameters": {
+    "compression": "enabled",
+    "encryption": "quantum_safe",
+    "error_correction": "forward",
+    "synchronization": "nanosecond"
+  },
+  "performance_targets": {
+    "max_latency": 0.000001,
+    "min_throughput": 400,
+    "max_error_rate": 0.0001
+  }
+}
+```
+
+7.3 Timing Synchronization
+
+Get Synchronization Status
+
+```http
+GET /integration/timing
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "master_clock": {
+      "source": "atomic",
+      "time": 1704470400000000000,
+      "accuracy": 0.000000001
+    },
+    "layer_synchronization": {
+      "quantum": {
+        "offset": 0.000000002,
+        "jitter": 0.000000001,
+        "status": "synchronized"
+      },
+      "neuromorphic": {
+        "offset": 0.000000003,
+        "jitter": 0.000000002,
+        "status": "synchronized"
+      },
+      "edge": {
+        "offset": 0.000001,
+        "jitter": 0.0000001,
+        "status": "synchronized"
+      }
+    },
+    "event_alignment": {
+      "max_skew": 0.000001,
+      "correction_applied": true,
+      "alignment_accuracy": 0.999999
+    }
+  }
+}
+```
+
+7.4 Event Management
+
+Publish Event
+
+```http
+POST /integration/events
+Content-Type: application/json
+
+{
+  "event_type": "cognitive_cycle_complete",
+  "source_layer": "integration",
+  "source_component": "task_engine",
+  "payload": {
+    "task_id": "integ_task_901234",
+    "results": { ... },
+    "metrics": { ... }
+  },
+  "priority": "high",
+  "routing": {
+    "layers": ["quantum", "neuromorphic", "edge", "homeostasis"],
+    "delivery_guarantee": "at_least_once",
+    "time_to_live": 3600
+  }
+}
+```
+
+Subscribe to Events
+
+```http
+POST /integration/events/subscriptions
+Content-Type: application/json
+
+{
+  "subscription_id": "sub_567890",
+  "event_types": ["quantum_measurement", "neuromorphic_spike", "edge_sensor"],
+  "filters": {
+    "source_layer": ["quantum", "neuromorphic"],
+    "priority": ["high", "critical"],
+    "timestamp": {
+      "after": 1704470400000000000,
+      "before": 1704470401000000000
+    }
+  },
+  "delivery": {
+    "method": "webhook",
+    "url": "https://your-server.com/events",
+    "format": "json",
+    "batch_size": 100,
+    "max_latency": 0.1
+  }
+}
+```
+
+---
+
+8. DATA & MONITORING API
+
+8.1 Metrics Collection
+
+Query Metrics
+
+```http
+POST /monitoring/metrics/query
+Content-Type: application/json
+
+{
+  "query": {
+    "metric_names": [
+      "quantum.fidelity",
+      "neuromorphic.firing_rate",
+      "edge.latency",
+      "system.power"
+    ],
+    "time_range": {
+      "start": 1704470400000000000,
+      "end": 1704470401000000000
+    },
+    "aggregation": {
+      "function": "mean",
+      "window": "1s"
+    },
+    "filters": {
+      "layer": ["quantum", "neuromorphic"],
+      "device_id": ["device_001"]
+    }
+  },
+  "format": "time_series",
+  "compression": "gzip"
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "metrics": [
+      {
+        "name": "quantum.fidelity",
+        "values": [
+          {"timestamp": 1704470400000000000, "value": 0.98},
+          {"timestamp": 1704470400100000000, "value": 0.98},
+          {"timestamp": 1704470400200000000, "value": 0.97}
+        ],
+        "statistics": {
+          "mean": 0.98,
+          "min": 0.97,
+          "max": 0.99,
+          "std": 0.005
+        }
+      }
+    ],
+    "query_time": 0.015,
+    "data_points": 1500,
+    "data_size": 24576
+  }
+}
+```
+
+8.2 Real-time Dashboard
+
+WebSocket Dashboard Connection
+
+```javascript
+// Connect to real-time dashboard
+const dashboard = new WebSocket('wss://api.quenne.institute.jp/monitoring/dashboard');
+
+dashboard.onopen = () => {
+  dashboard.send(JSON.stringify({
+    type: 'dashboard_subscribe',
+    panels: [
+      {
+        id: 'quantum_metrics',
+        metrics: ['fidelity', 'coherence_time', 'gate_error'],
+        update_interval: 1000
+      },
+      {
+        id: 'system_health',
+        metrics: ['power', 'temperature', 'availability'],
+        update_interval: 5000
+      }
+    ]
+  }));
+};
+
+dashboard.onmessage = (event) => {
+  const update = JSON.parse(event.data);
+  updateDashboard(update);
+};
+```
+
+Dashboard Update Format:
+
+```json
+{
+  "type": "dashboard_update",
+  "timestamp": 1704470400000000000,
+  "panels": {
+    "quantum_metrics": {
+      "fidelity": 0.98,
+      "coherence_time": 95,
+      "gate_error": 0.002,
+      "trend": "stable"
+    },
+    "system_health": {
+      "power": 17.45,
+      "temperature": 28.5,
+      "availability": 0.999,
+      "health_score": 0.95
+    }
+  },
+  "alerts": [
+    {
+      "id": "alert_123",
+      "severity": "warning",
+      "message": "Neuromorphic temperature approaching threshold",
+      "layer": "neuromorphic",
+      "metric": "temperature",
+      "value": 32.1,
+      "threshold": 30.0
+    }
+  ]
+}
+```
+
+8.3 Data Export
+
+Export Data
+
+```http
+POST /monitoring/export
+Content-Type: application/json
+
+{
+  "data_types": ["metrics", "events", "traces"],
+  "time_range": {
+    "start": 1704470400000000000,
+    "end": 1704470401000000000
+  },
+  "filters": {
+    "layers": ["quantum", "neuromorphic"],
+    "event_types": ["measurement", "spike", "actuation"]
+  },
+  "format": "parquet",
+  "compression": "snappy",
+  "destination": {
+    "type": "s3",
+    "bucket": "quenne-data",
+    "prefix": "exports/2026-01-05/"
+  },
+  "notification": {
+    "email": "data-team@quenne.institute.jp",
+    "webhook": "https://your-server.com/export-complete"
+  }
+}
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "export_id": "export_123456",
+    "status": "processing",
+    "estimated_size": 1073741824,
+    "estimated_records": 10000000,
+    "estimated_completion": 1704470405000000000,
+    "download_url": null,
+    "status_url": "/monitoring/exports/export_123456"
+  }
+}
+```
+
+---
+
+9. ERROR HANDLING
+
+9.1 Standard Error Response
+
+```json
+{
+  "error": {
+    "code": "QUANTUM_BACKEND_UNAVAILABLE",
+    "message": "The requested quantum backend is currently unavailable",
+    "details": {
+      "backend_id": "ibmq_quito",
+      "reason": "maintenance",
+      "estimated_recovery": "2026-01-05T11:00:00Z"
+    },
+    "timestamp": 1704470400000000000,
+    "request_id": "req_abc123",
+    "documentation_url": "https://docs.quenne.institute.jp/errors/QUANTUM_BACKEND_UNAVAILABLE"
+  }
+}
+```
+
+9.2 HTTP Status Codes
+
+```
+2xx - Success:
+  200 OK                    # Request succeeded
+  201 Created               # Resource created
+  202 Accepted              # Request accepted for processing
+  204 No Content            # Request succeeded, no response body
+
+4xx - Client Errors:
+  400 Bad Request           # Malformed request
+  401 Unauthorized          # Authentication required
+  403 Forbidden             # Insufficient permissions
+  404 Not Found             # Resource not found
+  409 Conflict              # Resource conflict
+  429 Too Many Requests     # Rate limit exceeded
+
+5xx - Server Errors:
+  500 Internal Server Error # Unexpected server error
+  503 Service Unavailable   # Service temporarily unavailable
+  504 Gateway Timeout       # Upstream service timeout
+```
+
+9.3 Error Categories
+
+```yaml
+Error Codes:
+  # Quantum Layer
+  QUANTUM_BACKEND_UNAVAILABLE: "Quantum backend is unavailable"
+  QUANTUM_CIRCUIT_INVALID:     "Quantum circuit is invalid"
+  QUANTUM_STATE_ERROR:         "Quantum state error"
+  QUANTUM_MEMORY_FULL:         "Quantum memory is full"
+  
+  # Neuromorphic Layer
+  NEUROMORPHIC_NETWORK_FULL:   "Neuromorphic network is full"
+  NEUROMORPHIC_LEARNING_ERROR: "Learning error occurred"
+  NEUROMORPHIC_MEMORY_ERROR:   "Memory access error"
+  
+  # Edge Layer
+  EDGE_DEVICE_UNAVAILABLE:     "Edge device is unavailable"
+  EDGE_SENSOR_ERROR:           "Sensor error"
+  EDGE_ACTUATOR_ERROR:         "Actuator error"
+  
+  # Integration Layer
+  INTEGRATION_PROTOCOL_ERROR:  "Protocol error"
+  INTEGRATION_TIMEOUT:         "Integration timeout"
+  INTEGRATION_SYNC_ERROR:      "Synchronization error"
+  
+  # Homeostasis Layer
+  HOMEOSTASIS_ANOMALY:         "System anomaly detected"
+  HOMEOSTASIS_CRITICAL:        "Critical system state"
+  HOMEOSTASIS_SECURITY_ALERT:  "Security alert"
+  
+  # System Errors
+  SYSTEM_OVERLOAD:             "System overload"
+  SYSTEM_ENERGY_LIMIT:         "Energy limit reached"
+  SYSTEM_TEMPERATURE_CRITICAL: "Critical temperature"
+```
+
+9.4 Retry Logic
+
+```python
+# Python retry example with exponential backoff
+from quenne import Client
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+client = Client()
+
+@retry(
+    stop=stop_after_attempt(5),
+    wait=wait_exponential(multiplier=1, min=1, max=10)
+)
+def execute_with_retry(circuit):
+    try:
+        return client.quantum.execute_circuit(circuit)
+    except quenne.exceptions.QuantumBackendUnavailable:
+        # Log and retry
+        logging.warning("Backend unavailable, retrying...")
+        raise
+```
+
+---
+
+10. RATE LIMITING
+
+10.1 Rate Limit Headers
+
+```http
+# Response headers
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 950
+X-RateLimit-Reset: 1704470460
+X-RateLimit-Energy: 1000
+X-RateLimit-Energy-Remaining: 850
+X-RateLimit-Energy-Reset: 1704470460
+```
+
+10.2 Rate Limit Categories
+
+```yaml
+Rate Limits:
+  tier_basic:
+    requests_per_minute: 100
+    energy_per_hour: 1000
+    concurrent_requests: 10
+  
+  tier_research:
+    requests_per_minute: 1000
+    energy_per_hour: 10000
+    concurrent_requests: 100
+  
+  tier_partner:
+    requests_per_minute: 10000
+    energy_per_hour: 100000
+    concurrent_requests: 1000
+  
+  tier_internal:
+    requests_per_minute: 100000
+    energy_per_hour: 1000000
+    concurrent_requests: 10000
+```
+
+10.3 Check Rate Limits
+
+```http
+GET /rate-limits
+```
+
+Response:
+
+```json
+{
+  "data": {
+    "current_limits": {
+      "requests_per_minute": 1000,
+      "energy_per_hour": 10000,
+      "concurrent_requests": 100
+    },
+    "current_usage": {
+      "requests_last_minute": 150,
+      "energy_last_hour": 850,
+      "concurrent_requests": 12
+    },
+    "remaining": {
+      "requests_this_minute": 850,
+      "energy_this_hour": 9150,
+      "concurrent_capacity": 88
+    },
+    "reset_times": {
+      "requests": "2026-01-05T10:31:00Z",
+      "energy": "2026-01-05T11:00:00Z"
+    }
+  }
+}
+```
+
+---
+
+11. WEBSOCKET & STREAMING
+
+11.1 WebSocket Connection
+
+```javascript
+// Connect to QUENNE WebSocket
+const ws = new WebSocket('wss://api.quenne.institute.jp/ws/v1');
+
+ws.onopen = () => {
+  // Authenticate
+  ws.send(JSON.stringify({
+    type: 'auth',
+    token: 'your_jwt_token'
+  }));
+  
+  // Subscribe to channels
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    channels: ['quantum_jobs', 'neuromorphic_spikes', 'edge_sensors']
+  }));
+};
+
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  handleMessage(message);
+};
+
+ws.onclose = () => {
+  console.log('WebSocket disconnected');
+  // Implement reconnection logic
+};
+```
+
+11.2 WebSocket Message Types
+
+```json
+{
+  "type": "quantum_job_update",
+  "channel": "quantum_jobs",
+  "data": {
+    "job_id": "job_123456",
+    "status": "running",
+    "progress": 0.75,
+    "metrics": { ... }
+  },
+  "timestamp": 1704470400000000000
+}
+```
+
+11.3 Server-Sent Events (SSE)
+
+```javascript
+// Connect to SSE endpoint
+const eventSource = new EventSource('https://api.quenne.institute.jp/events/v1');
+
+eventSource.addEventListener('quantum_measurement', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Quantum measurement:', data);
+});
+
+eventSource.addEventListener('neuromorphic_spike', (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Neuromorphic spike:', data);
+});
+
+eventSource.onerror = (error) => {
+  console.error('EventSource error:', error);
+};
+```
+
+11.4 Data Streaming Endpoints
+
+Stream Sensor Data
+
+```http
+GET /edge/devices/{device_id}/sensors/stream
+Accept: text/event-stream
+
+# Returns SSE stream
+event: sensor_data
+data: {"sensor": "camera", "frame": "base64_data", "timestamp": 1704470400000000000}
+
+event: sensor_data
+data: {"sensor": "lidar", "points": [...], "timestamp": 1704470400100000000}
+```
+
+Stream Metrics
+
+```http
+GET /monitoring/metrics/stream
+Accept: text/event-stream
+
+# Returns real-time metrics stream
+event: metric_update
+data: {"layer": "quantum", "metric": "fidelity", "value": 0.98, "timestamp": 1704470400000000000}
+
+event: metric_update
+data: {"layer": "neuromorphic", "metric": "firing_rate", "value": 10.2, "timestamp": 1704470400100000000}
+```
+
+---
+
+APPENDIX: OPENAPI SPECIFICATION
+
+Quick Start with OpenAPI
+
+```yaml
+openapi: 3.0.0
+info:
+  title: QUENNE MVI API
+  version: 1.0.0
+  description: Quantum-Edge-Neuromorphic Engine API
+  contact:
+    name: QUENNE Research Institute
+    email: api@quenne.institute.jp
+
+servers:
+  - url: https://api.quenne.institute.jp/api/v1
+    description: Production server
+  - url: https://api.staging.quenne.institute.jp/api/v1
+    description: Staging server
+
+paths:
+  /quantum/backends:
+    get:
+      summary: List available quantum backends
+      operationId: listQuantumBackends
+      tags:
+        - Quantum
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumBackendsResponse'
+```
+
+Generate Client Libraries
+
+```bash
+# Generate Python client
+openapi-generator generate -i quenne-openapi.yaml -g python -o quenne-python-client
+
+# Generate TypeScript client
+openapi-generator generate -i quenne-openapi.yaml -g typescript-axios -o quenne-typescript-client
+
+# Generate Go client
+openapi-generator generate -i quenne-openapi.yaml -g go -o quenne-go-client
+```
+
+---
+
+NEXT STEPS
+
+This API specification provides the foundation for the QUENNE MVI. Next, we need to:
+
+1. Generate OpenAPI specification from this document
+2. Create API server implementations for each layer
+3. Develop client SDKs in Python, TypeScript, Go
+4. Implement comprehensive testing for all endpoints
+5. Create API documentation with interactive examples
+6. Set up API gateway with authentication and rate limiting
+
