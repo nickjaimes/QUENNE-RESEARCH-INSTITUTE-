@@ -1,0 +1,1303 @@
+QUENNE PROTOTYPE TECHNICAL ARCHITECTURE
+
+Phase 1: Minimum Viable Instrument (MVI) - Q2 2026
+
+---
+
+1. ARCHITECTURE OVERVIEW
+
+1.1 High-Level System Diagram
+
+```mermaid
+graph TB
+    subgraph "QUENNE MVI v0.1"
+        UI[User Interface<br/>Web Dashboard & API] --> MW[Middleware<br/>Orchestration Engine]
+        
+        MW --> QL
+        MW --> NL
+        MW --> EL
+        MW --> HL
+        
+        QL --> QNI[QNI Protocol]
+        QNI --> NL
+        
+        NL --> NEI[NEI Protocol]
+        NEI --> EL
+        
+        EL --> EHI[EHI Protocol]
+        EHI --> HL
+        
+        HL --> HQI[HQI Protocol]
+        HQI --> QL
+        
+        DB[(Time-Series<br/>Database)] --> MW
+        EV[Event Bus<br/>Kafka/RabbitMQ] --> MW
+    end
+    
+    subgraph QL["Quantum Layer"]
+        QS[Quantum Simulator<br/>Qiskit/PennyLane]
+        QC[Quantum Controller<br/>Custom FPGA]
+        QM[Quantum Memory<br/>State Storage]
+    end
+    
+    subgraph NL["Neuromorphic Layer"]
+        NS[Neuromorphic Simulator<br/>NEST/Brian2]
+        NC[Neuromorphic Controller<br/>Custom Firmware]
+        NM[Associative Memory<br/>Pattern Storage]
+    end
+    
+    subgraph EL["Edge Layer"]
+        ES[Edge Simulator<br/>Gazebo/ROS2]
+        EC[Edge Controller<br/>NVIDIA Jetson]
+        EM[Environment Model<br/>Digital Twin]
+    end
+    
+    subgraph HL["Homeostasis Layer"]
+        HS[Health Monitor<br/>Metrics Collector]
+        HC[Homeostatic Controller<br/>PID Loops]
+        HSEC[Security Engine<br/>Threat Detection]
+    end
+```
+
+1.2 Component Interaction Flow
+
+```python
+# Pseudo-code for the integrated flow
+def cognitive_cycle(sensor_data: SensorData) -> Action:
+    """Complete QUENNE cognitive cycle"""
+    
+    # 1. Quantum State Inference (QSI)
+    quantum_state = quantum_layer.infer(sensor_data)
+    
+    # 2. Quantum-Neuromorphic Interface (QNI)
+    spike_pattern = qni_protocol.encode(quantum_state)
+    
+    # 3. Neuromorphic Cognition
+    neural_activity = neuromorphic_layer.process(spike_pattern)
+    
+    # 4. Neuromorphic-Edge Interface (NEI)
+    motor_commands = nei_protocol.decode(neural_activity)
+    
+    # 5. Edge Actuation
+    action = edge_layer.actuate(motor_commands)
+    
+    # 6. Homeostatic Regulation (parallel)
+    homeostasis_layer.monitor({
+        'quantum_fidelity': quantum_state.fidelity,
+        'neural_activity': neural_activity.rate,
+        'edge_latency': action.latency,
+        'energy_consumption': action.energy
+    })
+    
+    # 7. Feedback Loop (HQI)
+    adjustments = homeostasis_layer.get_adjustments()
+    quantum_layer.adjust(adjustments)
+    
+    return action
+```
+
+---
+
+2. QUANTUM LAYER ARCHITECTURE
+
+2.1 Quantum Processing Unit (QPU) Simulator
+
+```mermaid
+graph LR
+    subgraph "Quantum Layer v0.1"
+        QAPI[Quantum API<br/>REST/gRPC] --> QCE[Quantum Circuit Engine]
+        
+        QCE --> QBS{Qubit State Manager}
+        QBS --> QSS[State Simulator<br/>40-qubit max]
+        QBS --> QNS[Noise Simulator<br/>Realistic decoherence]
+        
+        QSS --> QME[Measurement Engine]
+        QNS --> QME
+        
+        QME --> QDE[Data Encoder<br/>State → Classical]
+        QDE --> QNI[QNI Encoder]
+        
+        QME --> QMEM[Quantum Memory<br/>Pattern Storage]
+        QMEM --> QRM[Recall Manager]
+    end
+    
+    QNI -->|Spike Patterns| NL
+```
+
+2.2 Quantum Circuit Specifications
+
+```python
+# quantum/circuits/prototype.py
+class MVIQuantumCircuits:
+    """Minimum Viable Quantum Circuits for QUENNE"""
+    
+    @staticmethod
+    def associative_memory_circuit(pattern_size: int = 8) -> QuantumCircuit:
+        """Quantum associative memory circuit (8-16 qubits)"""
+        circuit = QuantumCircuit(pattern_size, pattern_size)
+        
+        # Amplitude encoding of patterns
+        circuit.initialize(amplitude_encoding(pattern), range(pattern_size))
+        
+        # Grover-like amplification for pattern recall
+        circuit.h(range(pattern_size))
+        circuit.append(grover_operator(pattern), range(pattern_size))
+        circuit.h(range(pattern_size))
+        
+        # Measurement
+        circuit.measure(range(pattern_size), range(pattern_size))
+        
+        return circuit
+    
+    @staticmethod
+    def probabilistic_reasoning_circuit(num_hypotheses: int = 4) -> QuantumCircuit:
+        """Quantum circuit for probabilistic reasoning (4-8 qubits)"""
+        circuit = QuantumCircuit(num_hypotheses, num_hypotheses)
+        
+        # Superposition of hypotheses
+        circuit.h(range(num_hypotheses))
+        
+        # Quantum Bayesian update
+        circuit.append(bayesian_update_gate(prior, evidence), range(num_hypotheses))
+        
+        # Interference for probability amplitudes
+        for i in range(num_hypotheses - 1):
+            circuit.cx(i, i+1)
+        
+        # Measurement of most probable hypothesis
+        circuit.measure(range(num_hypotheses), range(num_hypotheses))
+        
+        return circuit
+```
+
+2.3 Quantum State Inference Engine
+
+```python
+# quantum/inference/engine.py
+class QuantumStateInferenceEngine:
+    """Core quantum inference engine for MVI"""
+    
+    def __init__(self, simulator_backend: str = "qiskit_aer"):
+        self.backend = self._init_backend(simulator_backend)
+        self.circuit_cache = LRUCache(maxsize=100)
+        self.state_memory = QuantumStateMemory(capacity=1000)
+        
+    def infer(self, input_data: np.ndarray) -> QuantumState:
+        """Perform quantum state inference"""
+        # 1. Encode classical data to quantum state
+        quantum_state = self._encode_to_quantum(input_data)
+        
+        # 2. Apply inference circuit
+        circuit = self._load_inference_circuit(quantum_state.num_qubits)
+        result = self.backend.run(circuit, quantum_state)
+        
+        # 3. Extract probability distribution
+        probabilities = self._extract_probabilities(result)
+        
+        # 4. Store in quantum memory
+        self.state_memory.store(quantum_state, probabilities)
+        
+        return QuantumState(
+            amplitudes=result.statevector,
+            probabilities=probabilities,
+            uncertainty=self._calculate_uncertainty(probabilities)
+        )
+    
+    def _encode_to_quantum(self, data: np.ndarray) -> QuantumState:
+        """Amplitude encoding of classical data"""
+        # Normalize data for quantum encoding
+        normalized = data / np.linalg.norm(data)
+        
+        # Create quantum state
+        state = np.zeros(2**self._required_qubits(len(data)))
+        state[:len(normalized)] = normalized
+        
+        return QuantumState(state)
+```
+
+---
+
+3. NEUROMORPHIC LAYER ARCHITECTURE
+
+3.1 Neuromorphic Processing Unit (NPU) Simulator
+
+```mermaid
+graph TB
+    subgraph "Neuromorphic Layer v0.1"
+        NAPI[Neuromorphic API] --> NCM[Network Compiler]
+        
+        NCM --> NSN[Spiking Neural Network<br/>10,000 neurons]
+        
+        NSN --> NPE[Pattern Encoder<br/>Spike Encoding]
+        NSN --> NPD[Pattern Decoder<br/>Spike Decoding]
+        
+        NPE --> NAM[Associative Memory<br/>100 patterns]
+        NAM --> NPD
+        
+        NPD --> NEI[NEI Encoder]
+        
+        NSN --> NLM[Learning Manager<br/>STDP/R-STDP]
+        NLM --> NWM[Weight Memory<br/>Synaptic storage]
+    end
+    
+    QNI -->|Spike Patterns| NSN
+    NEI -->|Motor Commands| EL
+```
+
+3.2 Spiking Neural Network Specifications
+
+```python
+# neuromorphic/networks/mvi_network.py
+class MVISpikingNetwork:
+    """10,000 neuron spiking network for MVI"""
+    
+    def __init__(self):
+        self.num_neurons = 10000
+        self.num_synapses = 1000000  # ~100 synapses per neuron
+        
+        # Network layers
+        self.input_layer = InputLayer(1000)      # 1000 input neurons
+        self.associative_layer = AssociativeLayer(8000)  # 8000 associative neurons
+        self.output_layer = OutputLayer(1000)    # 1000 output neurons
+        
+        # Connectivity
+        self.connectivity = {
+            'input_to_associative': SparseConnectivity(0.1),  # 10% connectivity
+            'associative_recurrent': SparseConnectivity(0.05), # 5% recurrent
+            'associative_to_output': DenseConnectivity()      # Full connectivity
+        }
+        
+        # Learning rules
+        self.learning_rules = {
+            'stdp': STDPLearning(alpha=0.01, tau_plus=20, tau_minus=20),
+            'homeostatic': HomeostaticPlasticity(target_rate=10)  # 10 Hz target
+        }
+    
+    def process_spikes(self, input_spikes: SpikeTrain) -> SpikeTrain:
+        """Process incoming spikes through network"""
+        # 1. Input layer processing
+        input_activity = self.input_layer.process(input_spikes)
+        
+        # 2. Associative memory recall
+        recalled_patterns = self.associative_layer.recall(input_activity)
+        
+        # 3. Pattern completion
+        completed_patterns = self.associative_layer.complete(recalled_patterns)
+        
+        # 4. Output generation
+        output_spikes = self.output_layer.generate(completed_patterns)
+        
+        # 5. Learning update
+        self._update_weights(input_activity, output_spikes)
+        
+        # 6. Homeostatic regulation
+        self._regulate_firing_rates()
+        
+        return output_spikes
+```
+
+3.3 Associative Memory Implementation
+
+```python
+# neuromorphic/memory/associative.py
+class AssociativeMemoryField:
+    """Associative memory with pattern completion"""
+    
+    def __init__(self, pattern_size: int = 256, capacity: int = 100):
+        self.pattern_size = pattern_size
+        self.capacity = capacity
+        self.patterns = []  # Stored patterns
+        self.weights = np.zeros((pattern_size, pattern_size))
+        
+    def store_pattern(self, pattern: np.ndarray) -> bool:
+        """Store a pattern in associative memory"""
+        if len(self.patterns) >= self.capacity:
+            return False
+        
+        # Normalize pattern
+        normalized = pattern / np.linalg.norm(pattern)
+        self.patterns.append(normalized)
+        
+        # Update Hebbian weights
+        self.weights += np.outer(normalized, normalized)
+        
+        return True
+    
+    def recall_pattern(self, partial_pattern: np.ndarray, 
+                       threshold: float = 0.7) -> np.ndarray:
+        """Recall complete pattern from partial input"""
+        # Initialize with partial pattern
+        state = partial_pattern.copy()
+        
+        # Iterative pattern completion
+        for _ in range(10):  # Max 10 iterations
+            # Update state through weight matrix
+            new_state = np.dot(self.weights, state)
+            
+            # Apply non-linearity (threshold)
+            new_state = np.tanh(new_state)
+            
+            # Normalize
+            new_state = new_state / np.linalg.norm(new_state)
+            
+            # Check convergence
+            if np.dot(state, new_state) > threshold:
+                state = new_state
+                break
+            
+            state = new_state
+        
+        # Find closest stored pattern
+        similarities = [np.dot(state, p) for p in self.patterns]
+        best_match_idx = np.argmax(similarities)
+        
+        if similarities[best_match_idx] > threshold:
+            return self.patterns[best_match_idx]
+        else:
+            return state  # Return completed but novel pattern
+```
+
+---
+
+4. EDGE LAYER ARCHITECTURE
+
+4.1 Edge Processing Unit (EPU) Simulator
+
+```mermaid
+graph TB
+    subgraph "Edge Layer v0.1"
+        EAPI[Edge API] --> ESM[Simulation Manager]
+        
+        ESM --> ESIM[Environment Simulator<br/>Gazebo/ROS2]
+        ESM --> EDT[Digital Twin<br/>Physics Model]
+        
+        ESIM --> ESA[Sensor Array Simulator]
+        ESA --> ECAM[Camera: 640x480 @ 30fps]
+        ESA --> ELIDAR[LiDAR: 16 beams]
+        ESA --> EIMU[IMU: 6-axis]
+        
+        ESIM --> EACT[Actuator Simulator]
+        EACT --> EMOT[Motor Controller]
+        EACT --> ESERVO[Servo Controller]
+        
+        EDT --> EPHY[Physics Engine<br/>Bullet/ODE]
+        EPHY --> ECOLL[Collision Detection]
+        
+        NEI -->|Commands| EACT
+        ESA -->|Sensor Data| NEI
+    end
+```
+
+4.2 Edge Simulation Environment
+
+```python
+# edge/simulation/environment.py
+class MVISimulationEnvironment:
+    """Simulated edge environment for MVI"""
+    
+    def __init__(self):
+        # Simulation world
+        self.world = GazeboWorld("empty.world")
+        
+        # Robotic platform
+        self.robot = TurtleBot3(
+            position=[0, 0, 0],
+            orientation=[0, 0, 0, 1]
+        )
+        
+        # Sensors
+        self.sensors = {
+            'camera': RGBDCamera(resolution=(640, 480), fps=30),
+            'lidar': LaserScan(samples=360, range=10.0),
+            'imu': IMU(noise_model='gaussian'),
+            'bumper': ContactSensor()
+        }
+        
+        # Actuators
+        self.actuators = {
+            'wheels': DifferentialDrive(max_speed=1.0),
+            'arm': SimpleArm(dof=3) if has_arm else None
+        }
+        
+        # Task environment
+        self.tasks = {
+            'navigation': NavigationTask(),
+            'object_manipulation': ManipulationTask(),
+            'anomaly_detection': AnomalyDetectionTask()
+        }
+    
+    def run_cognitive_cycle(self, cognitive_engine):
+        """Run complete cognitive cycle in simulation"""
+        # 1. Sensor data collection
+        sensor_data = self._collect_sensor_data()
+        
+        # 2. Cognitive processing
+        commands = cognitive_engine.process(sensor_data)
+        
+        # 3. Actuation
+        self._execute_commands(commands)
+        
+        # 4. Environment update
+        self.world.step()
+        
+        # 5. Performance metrics
+        metrics = self._calculate_metrics()
+        
+        return {
+            'sensor_data': sensor_data,
+            'commands': commands,
+            'metrics': metrics,
+            'world_state': self.world.get_state()
+        }
+```
+
+---
+
+5. INTEGRATION ARCHITECTURE
+
+5.1 Cross-Layer Communication Protocols
+
+```mermaid
+graph TB
+    subgraph "Integration Layer"
+        EVB[Event Bus<br/>Apache Kafka] --> QH[Quantum Handler]
+        EVB --> NH[Neuromorphic Handler]
+        EVB --> EH[Edge Handler]
+        EVB --> HH[Homeostasis Handler]
+        
+        QH --> QNI
+        NH --> NEI
+        EH --> EHI
+        HH --> HQI
+        
+        TSS[Time Sync Service<br/>White Rabbit] --> QH
+        TSS --> NH
+        TSS --> EH
+        TSS --> HH
+        
+        MSG[Message Broker<br/>ZeroMQ] --> QH
+        MSG --> NH
+        MSG --> EH
+        MSG --> HH
+    end
+    
+    QNI --> QL
+    NEI --> NL
+    EHI --> EL
+    HQI --> HL
+```
+
+5.2 QNI Protocol Specification
+
+```python
+# integration/protocols/qni.py
+class QuantumNeuromorphicInterface:
+    """Protocol for quantum-to-neuromorphic state transfer"""
+    
+    # Packet format
+    class QNIPacket:
+        def __init__(self):
+            self.header = {
+                'version': '1.0',
+                'timestamp': time.time_ns(),
+                'source': 'quantum',
+                'destination': 'neuromorphic',
+                'packet_id': uuid.uuid4()
+            }
+            self.payload = {
+                'quantum_state': None,      # Complex amplitudes
+                'basis_states': None,       # Basis state labels
+                'probabilities': None,      # Measurement probabilities
+                'metadata': {
+                    'num_qubits': 0,
+                    'encoding_method': 'amplitude',
+                    'compression_ratio': 1.0
+                }
+            }
+            self.checksum = None
+    
+    @staticmethod
+    def encode_quantum_state(quantum_state: QuantumState) -> SpikePattern:
+        """Encode quantum state as spike pattern"""
+        # Extract probability amplitudes
+        probabilities = np.abs(quantum_state.amplitudes) ** 2
+        
+        # Convert to firing rates (Hz)
+        firing_rates = probabilities * 1000  # Scale to 0-1000 Hz
+        
+        # Generate spike trains using Poisson process
+        spike_pattern = []
+        for rate in firing_rates:
+            # Generate spike times for 100ms window
+            spike_times = poisson_spike_generator(
+                rate=rate,
+                duration=0.100,  # 100ms
+                dt=0.001         # 1ms resolution
+            )
+            spike_pattern.append(spike_times)
+        
+        return SpikePattern(
+            times=spike_pattern,
+            metadata={
+                'original_qubits': quantum_state.num_qubits,
+                'encoding_fidelity': calculate_fidelity(quantum_state, spike_pattern),
+                'compression_loss': calculate_compression_loss(quantum_state, spike_pattern)
+            }
+        )
+    
+    @staticmethod
+    def decode_spike_pattern(spike_pattern: SpikePattern) -> QuantumState:
+        """Decode spike pattern back to quantum state"""
+        # Convert spike times to firing rates
+        firing_rates = calculate_firing_rates(spike_pattern)
+        
+        # Convert to probability amplitudes
+        probabilities = firing_rates / np.sum(firing_rates)
+        amplitudes = np.sqrt(probabilities)
+        
+        # Add random phases (for now - could be encoded in spike timing)
+        phases = np.random.uniform(0, 2*np.pi, len(amplitudes))
+        complex_amplitudes = amplitudes * np.exp(1j * phases)
+        
+        return QuantumState(
+            amplitudes=complex_amplitudes,
+            probabilities=probabilities,
+            metadata={'decoded_from': 'spike_pattern'}
+        )
+```
+
+5.3 Timing & Synchronization System
+
+```python
+# integration/timing/synchronizer.py
+class GlobalTimingSynchronizer:
+    """Nanosecond-precision timing across all layers"""
+    
+    def __init__(self):
+        # Precision Time Protocol (PTP) implementation
+        self.ptp_master = PTPMaster(clock_source='atomic')
+        self.slaves = {
+            'quantum': PTPClient(),
+            'neuromorphic': PTPClient(),
+            'edge': PTPClient(),
+            'homeostasis': PTPClient()
+        }
+        
+        # Event timestamping
+        self.event_timestamps = {}
+        
+        # Jitter measurement
+        self.jitter_monitor = JitterMonitor()
+    
+    def synchronize_all(self) -> bool:
+        """Synchronize all system clocks"""
+        # Master clock reference
+        master_time = self.ptp_master.get_time()
+        
+        # Sync each layer
+        sync_results = {}
+        for layer_name, slave in self.slaves.items():
+            sync_offset = slave.sync_to_master(master_time)
+            sync_results[layer_name] = {
+                'offset_ns': sync_offset,
+                'jitter_ns': self.jitter_monitor.measure_jitter(slave)
+            }
+        
+        # Verify synchronization
+        max_offset = max(r['offset_ns'] for r in sync_results.values())
+        max_jitter = max(r['jitter_ns'] for r in sync_results.values())
+        
+        return {
+            'synchronized': max_offset < 100 and max_jitter < 10,  # <100ns offset, <10ns jitter
+            'details': sync_results,
+            'master_time': master_time
+        }
+    
+    def timestamp_event(self, event: Event) -> TimestampedEvent:
+        """Add nanosecond-precise timestamp to event"""
+        # Get synchronized time
+        current_time = self.get_synchronized_time()
+        
+        # Create timestamped event
+        return TimestampedEvent(
+            event=event,
+            timestamp=current_time,
+            source_clock=self.get_clock_source(event.source),
+            sequence_number=self.get_next_sequence()
+        )
+```
+
+---
+
+6. HOMEOSTASIS LAYER ARCHITECTURE
+
+6.1 System Monitor Architecture
+
+```mermaid
+graph TB
+    subgraph "Homeostasis Layer v0.1"
+        HMON[Health Monitor] --> HMET[Metrics Collector]
+        HMON --> HALERT[Alert Manager]
+        
+        HMET --> HQ[Metrics: Quantum]
+        HMET --> HN[Metrics: Neuromorphic]
+        HMET --> HE[Metrics: Edge]
+        HMET --> HSYS[Metrics: System]
+        
+        HQ --> QFI[Qubit Fidelity]
+        HQ --> QCOH[Coherence Time]
+        HQ --> QGATE[Gate Error Rates]
+        
+        HN --> NFR[Firing Rates]
+        HN --> NPLAST[Plasticity]
+        HN --> NENERGY[Energy Consumption]
+        
+        HE --> ELAT[Latency]
+        HE --> EACC[Accuracy]
+        HE --> EPWR[Power]
+        
+        HSYS --> STEMP[Temperature]
+        HSYS --> SPWR[Power]
+        HSYS --> SMEM[Memory]
+        HSYS --> SCPU[CPU]
+        
+        HALERT --> HACT[Action Manager]
+        HACT --> HADJ[Adjustments]
+        HADJ -->|Via HQI| QL
+        HADJ -->|Via internal| NL
+        HADJ -->|Via EHI| EL
+    end
+```
+
+6.2 Homeostatic Control System
+
+```python
+# homeostasis/control/controller.py
+class HomeostaticController:
+    """PID-based homeostatic control for QUENNE system"""
+    
+    def __init__(self):
+        # Setpoints for optimal operation
+        self.setpoints = {
+            'quantum_fidelity': 0.99,
+            'neuromorphic_firing_rate': 10.0,  # Hz
+            'edge_latency': 0.010,  # 10ms
+            'system_temperature': 25.0,  # °C
+            'power_consumption': 50.0,  # Watts
+        }
+        
+        # PID controllers for each parameter
+        self.controllers = {
+            'quantum': PIDController(kp=1.0, ki=0.1, kd=0.01),
+            'neuromorphic': PIDController(kp=2.0, ki=0.2, kd=0.05),
+            'edge': PIDController(kp=3.0, ki=0.3, kd=0.1),
+            'thermal': PIDController(kp=4.0, ki=0.4, kd=0.2),
+            'power': PIDController(kp=5.0, ki=0.5, kd=0.3)
+        }
+        
+        # Monitoring intervals
+        self.monitoring_intervals = {
+            'fast': 0.001,   # 1ms for critical parameters
+            'medium': 0.100, # 100ms for performance
+            'slow': 1.000    # 1s for system health
+        }
+    
+    def regulate_system(self, metrics: SystemMetrics) -> ControlActions:
+        """Calculate control actions to maintain homeostasis"""
+        actions = {}
+        
+        # 1. Quantum layer regulation
+        if metrics.quantum.fidelity < self.setpoints['quantum_fidelity']:
+            actions['quantum'] = self.controllers['quantum'].calculate(
+                setpoint=self.setpoints['quantum_fidelity'],
+                measured=metrics.quantum.fidelity
+            )
+        
+        # 2. Neuromorphic layer regulation
+        firing_rate_error = abs(metrics.neuromorphic.firing_rate - 
+                               self.setpoints['neuromorphic_firing_rate'])
+        if firing_rate_error > 2.0:  # More than 2 Hz deviation
+            actions['neuromorphic'] = self.controllers['neuromorphic'].calculate(
+                setpoint=self.setpoints['neuromorphic_firing_rate'],
+                measured=metrics.neuromorphic.firing_rate
+            )
+        
+        # 3. Edge layer regulation
+        if metrics.edge.latency > self.setpoints['edge_latency']:
+            actions['edge'] = self.controllers['edge'].calculate(
+                setpoint=self.setpoints['edge_latency'],
+                measured=metrics.edge.latency
+            )
+        
+        # 4. Thermal regulation
+        if metrics.system.temperature > self.setpoints['system_temperature'] + 5:
+            actions['thermal'] = self.controllers['thermal'].calculate(
+                setpoint=self.setpoints['system_temperature'],
+                measured=metrics.system.temperature
+            )
+        
+        # 5. Power regulation
+        if metrics.system.power > self.setpoints['power_consumption']:
+            actions['power'] = self.controllers['power'].calculate(
+                setpoint=self.setpoints['power_consumption'],
+                measured=metrics.system.power
+            )
+        
+        return actions
+```
+
+---
+
+7. DATA FLOW & MESSAGING
+
+7.1 Event-Driven Architecture
+
+```python
+# integration/messaging/event_bus.py
+class QUENNEEventBus:
+    """Event bus for cross-layer communication"""
+    
+    def __init__(self):
+        # Kafka for high-throughput events
+        self.kafka_producer = KafkaProducer(
+            bootstrap_servers=['localhost:9092'],
+            value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        )
+        
+        # ZeroMQ for low-latency control messages
+        self.zmq_context = zmq.Context()
+        self.zmq_publisher = self.zmq_context.socket(zmq.PUB)
+        self.zmq_publisher.bind("tcp://*:5556")
+        
+        # Redis for state sharing
+        self.redis_client = redis.Redis(host='localhost', port=6379, db=0)
+        
+        # Event topics
+        self.topics = {
+            'quantum_events': 'quenne.quantum',
+            'neuromorphic_events': 'quenne.neuromorphic',
+            'edge_events': 'quenne.edge',
+            'homeostasis_events': 'quenne.homeostasis',
+            'control_events': 'quenne.control',
+            'metric_events': 'quenne.metrics'
+        }
+    
+    def publish_event(self, topic: str, event: Event):
+        """Publish event to appropriate channel"""
+        # Add timestamp
+        timestamped_event = {
+            'event': event.to_dict(),
+            'timestamp': time.time_ns(),
+            'source': event.source
+        }
+        
+        # Choose channel based on latency requirements
+        if event.latency_requirement < 0.001:  # <1ms
+            # ZeroMQ for ultra-low latency
+            self.zmq_publisher.send_json({
+                'topic': topic,
+                'data': timestamped_event
+            })
+        elif event.size > 1000000:  # >1MB
+            # Redis for large data
+            self.redis_client.set(
+                f"event:{event.id}",
+                pickle.dumps(timestamped_event)
+            )
+            # Send notification via Kafka
+            self.kafka_producer.send(topic, {
+                'type': 'large_event',
+                'event_id': event.id,
+                'size': event.size
+            })
+        else:
+            # Kafka for regular events
+            self.kafka_producer.send(topic, timestamped_event)
+    
+    def subscribe(self, topic: str, callback: Callable):
+        """Subscribe to events on a topic"""
+        consumer = KafkaConsumer(
+            topic,
+            bootstrap_servers=['localhost:9092'],
+            value_deserializer=lambda x: json.loads(x.decode('utf-8'))
+        )
+        
+        # Start consumer thread
+        thread = threading.Thread(
+            target=self._consume_messages,
+            args=(consumer, callback)
+        )
+        thread.daemon = True
+        thread.start()
+```
+
+7.2 Data Pipeline Architecture
+
+```mermaid
+graph LR
+    subgraph "Data Pipeline"
+        SRC[Data Sources] --> ING[Ingestion]
+        
+        ING --> PROC[Processing]
+        PROC --> TRANS[Transformation]
+        
+        TRANS --> STORE[Storage]
+        STORE --> TSDB[(Time-Series DB)]
+        STORE --> OBJSTORE[(Object Store)]
+        STORE --> VECTORD[(Vector DB)]
+        
+        STORE --> SERV[Serving]
+        SERV --> API[APIs]
+        SERV --> DASH[Dashboards]
+        SERV --> ML[ML Models]
+    end
+    
+    QL -->|Metrics| SRC
+    NL -->|Spike Data| SRC
+    EL -->|Sensor Data| SRC
+    HL -->|Health Data| SRC
+```
+
+---
+
+8. DEPLOYMENT ARCHITECTURE
+
+8.1 Containerized Deployment
+
+```yaml
+# docker-compose.mvi.yml
+version: '3.8'
+
+services:
+  # Quantum Layer
+  quantum-simulator:
+    image: quenne/quantum-simulator:v0.1
+    ports:
+      - "8080:8080"
+    environment:
+      - QUANTUM_BACKEND=qiskit_aer
+      - MAX_QUBITS=40
+    volumes:
+      - quantum-data:/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  # Neuromorphic Layer  
+  neuromorphic-simulator:
+    image: quenne/neuromorphic-simulator:v0.1
+    ports:
+      - "8081:8081"
+    environment:
+      - NEURONS=10000
+      - SYNAPSES=1000000
+    volumes:
+      - neuromorphic-data:/data
+
+  # Edge Layer
+  edge-simulator:
+    image: quenne/edge-simulator:v0.1
+    ports:
+      - "8082:8082"
+    environment:
+      - ROS_DOMAIN_ID=42
+      - USE_GPU=true
+    volumes:
+      - edge-data:/data
+    devices:
+      - /dev/dri:/dev/dri  # GPU access
+
+  # Integration Layer
+  integration-middleware:
+    image: quenne/integration:v0.1
+    ports:
+      - "8083:8083"
+    environment:
+      - KAFKA_BROKERS=kafka:9092
+      - REDIS_HOST=redis
+    depends_on:
+      - kafka
+      - redis
+
+  # Homeostasis Layer
+  homeostasis-controller:
+    image: quenne/homeostasis:v0.1
+    ports:
+      - "8084:8084"
+    environment:
+      - MONITORING_INTERVAL=0.1
+
+  # Supporting Services
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+
+  dashboard:
+    image: quenne/dashboard:v0.1
+    ports:
+      - "3000:3000"
+    environment:
+      - API_URL=http://integration-middleware:8083
+
+volumes:
+  quantum-data:
+  neuromorphic-data:
+  edge-data:
+```
+
+8.2 Cloud Deployment (Optional)
+
+```yaml
+# kubernetes/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quenne-mvi
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quenne
+  template:
+    metadata:
+      labels:
+        app: quenne
+    spec:
+      containers:
+      - name: quantum
+        image: quenne/quantum-simulator:v0.1
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+            memory: "8Gi"
+            cpu: "4"
+        env:
+        - name: QUANTUM_BACKEND
+          value: "qiskit_aer"
+          
+      - name: neuromorphic
+        image: quenne/neuromorphic-simulator:v0.1
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+            
+      - name: edge
+        image: quenne/edge-simulator:v0.1
+        resources:
+          limits:
+            memory: "4Gi"
+            cpu: "2"
+            
+      - name: integration
+        image: quenne/integration:v0.1
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+            
+      - name: homeostasis
+        image: quenne/homeostasis:v0.1
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "0.5"
+            
+      - name: dashboard
+        image: quenne/dashboard:v0.1
+        ports:
+        - containerPort: 3000
+```
+
+---
+
+9. PERFORMANCE TARGETS & METRICS
+
+9.1 MVI Performance Targets
+
+```python
+# benchmarks/mvi_targets.py
+class MVIPerformanceTargets:
+    """Performance targets for Minimum Viable Instrument"""
+    
+    # Latency targets (end-to-end)
+    LATENCY = {
+        'quantum_inference': 0.010,      # 10ms
+        'neuromorphic_processing': 0.005, # 5ms
+        'edge_actuation': 0.001,         # 1ms
+        'total_cycle': 0.020,            # 20ms total
+    }
+    
+    # Accuracy targets
+    ACCURACY = {
+        'pattern_recall': 0.95,          # 95% recall accuracy
+        'anomaly_detection': 0.90,       # 90% detection rate
+        'object_recognition': 0.85,       # 85% recognition accuracy
+    }
+    
+    # Efficiency targets
+    EFFICIENCY = {
+        'energy_per_inference': 0.001,   # 1mJ per inference
+        'memory_usage': 8 * 1024**3,     # 8GB max memory
+        'cpu_utilization': 0.70,         # 70% CPU utilization target
+    }
+    
+    # Integration targets
+    INTEGRATION = {
+        'qni_fidelity': 0.99,            # 99% state transfer fidelity
+        'synchronization_jitter': 0.000001,  # 1µs max jitter
+        'event_latency': 0.000100,       # 100µs max event latency
+    }
+```
+
+9.2 Monitoring Dashboard
+
+```python
+# monitoring/dashboard.py
+class MVIDashboard:
+    """Real-time monitoring dashboard for MVI"""
+    
+    def __init__(self):
+        self.metrics = {
+            'quantum': {
+                'fidelity': Gauge('quantum_fidelity', 'Qubit state fidelity'),
+                'coherence_time': Gauge('quantum_coherence', 'Qubit coherence time'),
+                'gate_error': Gauge('quantum_gate_error', 'Average gate error rate'),
+            },
+            'neuromorphic': {
+                'firing_rate': Gauge('neuron_firing_rate', 'Average firing rate'),
+                'spike_count': Counter('spike_count', 'Total spikes processed'),
+                'learning_rate': Gauge('learning_rate', 'Current learning rate'),
+            },
+            'edge': {
+                'latency': Histogram('edge_latency', 'End-to-end latency'),
+                'throughput': Counter('edge_throughput', 'Frames processed'),
+                'accuracy': Gauge('edge_accuracy', 'Task accuracy'),
+            },
+            'system': {
+                'temperature': Gauge('system_temperature', 'System temperature'),
+                'power': Gauge('system_power', 'Power consumption'),
+                'memory': Gauge('system_memory', 'Memory usage'),
+            }
+        }
+    
+    def update_metrics(self, layer: str, values: dict):
+        """Update metrics for a specific layer"""
+        for metric_name, value in values.items():
+            if metric_name in self.metrics[layer]:
+                self.metrics[layer][metric_name].set(value)
+    
+    def generate_dashboard(self):
+        """Generate web dashboard"""
+        app = dash.Dash(__name__)
+        
+        # Layout
+        app.layout = html.Div([
+            html.H1('QUENNE MVI Dashboard'),
+            
+            # Quantum metrics
+            html.H2('Quantum Layer'),
+            dcc.Graph(id='quantum-fidelity'),
+            dcc.Graph(id='quantum-coherence'),
+            
+            # Neuromorphic metrics
+            html.H2('Neuromorphic Layer'),
+            dcc.Graph(id='neuromorphic-firing-rate'),
+            dcc.Graph(id='neuromorphic-spike-count'),
+            
+            # Edge metrics
+            html.H2('Edge Layer'),
+            dcc.Graph(id='edge-latency'),
+            dcc.Graph(id='edge-accuracy'),
+            
+            # System metrics
+            html.H2('System Health'),
+            dcc.Graph(id='system-temperature'),
+            dcc.Graph(id='system-power'),
+            
+            # Update interval
+            dcc.Interval(
+                id='interval-component',
+                interval=1000,  # Update every second
+                n_intervals=0
+            )
+        ])
+        
+        return app
+```
+
+---
+
+10. DEVELOPMENT ROADMAP
+
+10.1 Phase Timeline
+
+```mermaid
+gantt
+    title QUENNE MVI Development Roadmap
+    dateFormat  YYYY-MM-DD
+    section Phase 0.1
+    Infrastructure Setup     :2026-01-05, 14d
+    Team Assembly           :2026-01-10, 21d
+    
+    section Phase 0.2
+    Quantum Simulator       :2026-01-20, 28d
+    Neuromorphic Simulator  :2026-01-25, 28d
+    
+    section Phase 0.3
+    Edge Simulator          :2026-02-10, 21d
+    Integration Middleware  :2026-02-15, 28d
+    
+    section Phase 0.4
+    Homeostasis Layer       :2026-03-01, 21d
+    Protocol Development    :2026-03-10, 21d
+    
+    section Phase 0.5
+    Integration Testing     :2026-04-01, 21d
+    Performance Optimization :2026-04-10, 14d
+    
+    section Phase 0.6
+    Demo Preparation        :2026-04-20, 14d
+    Documentation          :2026-04-25, 14d
+```
+
+10.2 Milestone Deliverables
+
+```
+MILESTONE 0.1 (Jan 31, 2026):
+✅ Development environment setup
+✅ GitHub organization with basic structure
+✅ First 5 team members onboarded
+✅ Initial $500K funding secured
+
+MILESTONE 0.2 (Feb 28, 2026):
+✅ Quantum simulator with 8-16 qubits
+✅ Neuromorphic simulator with 1,000 neurons
+✅ Basic Docker containerization
+✅ First integration tests passing
+
+MILESTONE 0.3 (Mar 31, 2026):
+✅ Edge simulator with simple robot
+✅ QNI protocol v0.1 implementation
+✅ Basic dashboard for monitoring
+✅ $2M total funding secured
+
+MILESTONE 0.4 (Apr 30, 2026):
+✅ Complete MVI integration
+✅ First cognitive task demonstration
+✅ Performance benchmarks established
+✅ First research paper submitted
+
+MILESTONE 0.5 (May 31, 2026):
+✅ Scale to 40 qubits / 10,000 neurons
+✅ Real-time performance optimization
+✅ Partner demo ready
+✅ Prepare for Series A funding
+```
+
+---
+
+SUMMARY: IMMEDIATE NEXT TECHNICAL STEPS
+
+Week 1-2: Foundation
+
+1. Set up GitHub repository with the architecture above
+2. Create Docker containers for each layer
+3. Implement quantum simulator (8-qubit minimum)
+4. Build basic neuromorphic simulator (1,000 neurons)
+5. Set up CI/CD pipeline for automated testing
+
+Week 3-4: Core Integration
+
+1. Implement QNI protocol v0.1
+2. Create event bus for inter-layer communication
+3. Build basic dashboard for monitoring
+4. Run first integration test (quantum → neuromorphic)
+5. Document APIs for each layer
+
+Month 2: Edge Integration
+
+1. Add edge simulator with simple robot
+2. Implement NEI protocol
+3. Create digital twin environment
+4. Run first complete cycle (sensor → quantum → neuromorphic → action)
+5. Measure baseline performance
+
+Month 3: Homeostasis & Optimization
+
+1. Implement homeostasis layer
+2. Add performance monitoring
+3. Optimize cross-layer latency
+4. Create demonstration scenarios
+5. Prepare for first external demo
+
+---
+
+RESOURCE REQUIREMENTS FOR MVI
+
+Development Hardware:
+
+```
+Minimum:
+- 2x Developer workstations (32GB RAM, RTX 3080+)
+- 1x Server (64GB RAM, A100 GPU for simulation)
+- Network equipment for local testing
+
+Recommended:
+- 4x Developer workstations
+- 2x GPU servers (A100/H100)
+- Quantum simulator access (IBM Quantum, etc.)
+- Edge robotics kit (TurtleBot3 or similar)
+```
+
+Cloud Resources (Optional):
+
+```
+AWS/GCP/Azure:
+- GPU instances for simulation: $2-5K/month
+- Storage for datasets: $200-500/month
+- CI/CD pipeline: $100-200/month
+```
+
+Software Licenses:
+
+```
+Open Source (Free):
+- Qiskit, PennyLane, NEST, ROS2, Gazebo
+- Kafka, Redis, Docker, Kubernetes
+- Python, C++, CUDA toolkits
+
+Commercial (If needed):
+- NVIDIA Omniverse: $9,000/year
+- ANSYS HFSS (for quantum simulation): $30,000/year
+- MATLAB/Simulink: $2,000/year
+```
+
+---
+
+IMMEDIATE ACTION ITEMS FROM THIS ARCHITECTURE
+
+1. Create GitHub repos for each layer component
+2. Set up Docker development environment
+3. Implement quantum simulator with basic circuits
+4. Build neuromorphic spiking network simulator
+5. Create integration middleware skeleton
+6. Design and implement QNI protocol
+7. Set up monitoring and metrics collection
+8. Create automated test suite
+9. Document API specifications
+10. Plan first integration demo scenario
+
