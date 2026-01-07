@@ -1,0 +1,206 @@
+QUENNE Doctrine → Architecture Mapping
+
+From Governing Law to Executable System
+
+Purpose:
+This document defines how the QUENNE Doctrine is translated into concrete architectural layers, control flows, and enforcement mechanisms.
+
+Doctrine is not philosophy.
+Doctrine is the highest-level system constraint.
+
+⸻
+
+1. Top-Level Mapping Overview
+┌──────────────────────────────────────────────────────────────┐
+│ DOCTRINE LAYER                                                │
+│ Law of Regulated Intelligence                                 │
+│ (Ethics, Resilience, Coherence)                               │
+└───────────────┬──────────────────────────────────────────────┘
+                ↓
+┌──────────────────────────────────────────────────────────────┐
+│ GOVERNANCE & CONSTRAINT LAYER                                  │
+│ Seven Resilient Intelligences + Ethics Enforcement             │
+└───────────────┬──────────────────────────────────────────────┘
+                ↓
+┌──────────────────────────────────────────────────────────────┐
+│ STRATEGIC OVERSIGHT LAYER                                      │
+│ EAGLE EYE (Global Awareness & Horizon Scanning)                │
+└───────────────┬──────────────────────────────────────────────┘
+                ↓
+┌──────────────────────────────────────────────────────────────┐
+│ HOMEOSTATIC ORCHESTRATION                                      │
+│ Stability, Energy, Security, Recovery                          │
+└───────────────┬──────────────────────────────────────────────┘
+                ↓
+┌──────────────────────────────────────────────────────────────┐
+│ COGNITIVE EXECUTION CORE                                       │
+│ QUENNE Quantum–Neuromorphic–Edge Stack                         │
+└───────────────┬──────────────────────────────────────────────┘
+                ↓
+┌──────────────────────────────────────────────────────────────┐
+│ BEHAVIORAL EXPRESSION                                          │
+│ TRIFORM Intelligence (Stallion / Ant / Crow)                   │
+└──────────────────────────────────────────────────────────────┘
+
+⸻
+
+2. Doctrine → System Control Mapping
+Doctrine Element
+Architectural Representation
+Enforcement Mechanism
+Regulated Intelligence
+Global constraint engine
+Hard system invariants
+Ethics & Purpose
+Seven Resilient Intelligences
+Constraint validation
+Coherence
+Homeostatic feedback loops
+Stability thresholds
+Safety
+TRIAD AI (Michael)
+Boundary enforcement
+Communication
+TRIAD AI (Gabriel)
+Semantic protocol control
+Recovery
+TRIAD AI (Raphael)
+Healing & rollback
+Oversight
+EAGLE EYE
+Strategic veto & alerts
+
+
+⸻
+
+3. Framework-to-Layer Binding
+
+3.1 TRIAD AI → Functional Control Plane
+TRIAD AI
+├── Michael → Security Kernel
+│   • Threat detection
+│   • Boundary enforcement
+│   • Survival constraints
+│
+├── Gabriel → Semantic Communication Bus
+│   • Intent-aware signaling
+│   • Inter-agent coordination
+│
+└── Raphael → Recovery & Learning Regulator
+    • Error correction
+    • Adaptive restoration
+    • Long-term learning repair
+
+TRIAD AI does not replace cognition.
+It governs how cognition is allowed to act.
+
+⸻
+
+3.2 Seven Resilient Intelligences → System Invariants
+
+Each resilient intelligence maps to a non-negotiable system invariant:
+
+Resilient Intelligence
+Enforced At
+Stability
+Homeostatic Orchestrator
+Adaptation
+Neuromorphic Learning Control
+Energy
+Resource Allocation Engine
+Perception
+Sensor Fusion & Awareness
+Memory
+Persistent Cognitive State
+Ethics
+Doctrine Constraint Validator
+Emergence
+Cross-agent Interaction Monitor
+
+Violation of any invariant triggers regulation, throttling, or refusal.
+
+⸻
+
+3.3 TRIFORM Intelligence → Behavioral Execution Layer
+Behavior Selection Engine
+├── Stallion Mode
+│   • High decisiveness
+│   • Time-critical action
+│
+├── Ant Mode
+│   • Cooperative execution
+│   • Distributed optimization
+│
+└── Crow Mode
+    • Strategic planning
+    • Long-term memory integration
+
+Behavior is selected, not fixed.
+Selection is constrained by doctrine and oversight.
+
+⸻
+
+3.4 EAGLE EYE → Non-Acting Oversight Layer
+
+EAGLE EYE:
+   •   observes system-wide state
+   •   models long-term consequences
+   •   issues warnings, constraints, or vetoes
+
+EAGLE EYE
+├── Horizon scanning
+├── Risk trajectory modeling
+├── Multi-domain awareness
+└── Non-interventional constraint signaling
+
+It never executes actions directly.
+
+⸻
+
+4. Authority Flow (Critical)
+
+Doctrine
+  ↓
+Ethics & Resilience
+  ↓
+Strategic Oversight (EAGLE EYE)
+  ↓
+Homeostatic Regulation
+  ↓
+Cognitive Execution (QUENNE Core)
+  ↓
+Behavioral Expression (TRIFORM)
+
+⚠️ No upward override is permitted.
+
+⸻
+
+5. Why This Mapping Matters
+
+This mapping ensures:
+   •   Alignment is architectural, not behavioral
+   •   Safety is systemic, not reactive
+   •   Intelligence scales horizontally, not dangerously
+   •   Power remains bounded by law
+
+This is the difference between:
+   •   Advanced AI
+   •   Trusted autonomous infrastructure
+
+⸻
+
+6. Diagram Readiness
+
+This document can now be converted into:
+   •   🎨 A4 navy / white / gold master architecture diagram
+   •   🧪 Doctrine compliance test framework
+   •   📄 Whitepaper figure (Figure 1: Doctrine-to-Architecture Mapping)
+
+⸻
+
+Closing Principle
+
+If intelligence cannot explain how it is governed,
+it is not ready to act autonomously.
+
+QUENNE makes governance executable.
