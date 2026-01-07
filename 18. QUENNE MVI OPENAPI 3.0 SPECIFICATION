@@ -1,0 +1,3642 @@
+QUENNE MVI OPENAPI 3.0 SPECIFICATION
+
+Complete API Definition in YAML
+
+```yaml
+openapi: 3.0.0
+info:
+  title: QUENNE MVI API
+  version: 1.0.0
+  description: |
+    Quantum-Edge-Neuromorphic Engine Minimum Viable Instrument API
+    Unified interface for cognitive computing across quantum, neuromorphic, edge, and homeostasis layers.
+  contact:
+    name: QUENNE Research Institute
+    email: api@quenne.institute.jp
+    url: https://quenne.institute.jp
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  x-logo:
+    url: https://quenne.institute.jp/logo.png
+    altText: QUENNE Logo
+
+servers:
+  - url: https://api.quenne.institute.jp/api/v1
+    description: Production API
+    variables:
+      environment:
+        default: production
+        enum:
+          - production
+          - staging
+          - development
+  - url: https://api.staging.quenne.institute.jp/api/v1
+    description: Staging API
+  - url: https://api.dev.quenne.institute.jp/api/v1
+    description: Development API
+  - url: http://localhost:8080/api/v1
+    description: Local development
+
+tags:
+  - name: Authentication
+    description: API authentication and token management
+    x-tagOrder: 1
+  - name: Quantum
+    description: Quantum computing layer operations
+    x-tagOrder: 2
+  - name: Neuromorphic
+    description: Neuromorphic computing layer operations
+    x-tagOrder: 3
+  - name: Edge
+    description: Edge computing and robotics layer operations
+    x-tagOrder: 4
+  - name: Homeostasis
+    description: System homeostasis and health monitoring
+    x-tagOrder: 5
+  - name: Integration
+    description: Cross-layer integration and coordination
+    x-tagOrder: 6
+  - name: Monitoring
+    description: System monitoring and metrics
+    x-tagOrder: 7
+  - name: System
+    description: System-level operations and administration
+    x-tagOrder: 8
+
+securitySchemes:
+  BearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT
+    description: |
+      JWT token obtained from /auth/token endpoint.
+      Include as: Authorization: Bearer {token}
+  QuantumAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: QEA
+    description: Quantum-Enhanced Authentication token
+  ApiKeyAuth:
+    type: apiKey
+    in: header
+    name: X-API-Key
+    description: API key for service-to-service communication
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # ==================== AUTHENTICATION ENDPOINTS ====================
+  /auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Get authentication token
+      description: |
+        Obtain JWT token for API access using client credentials.
+        Tokens are valid for 1 hour and can be refreshed.
+      operationId: getAuthToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthTokenRequest'
+            examples:
+              clientCredentials:
+                summary: Client credentials grant
+                value:
+                  grant_type: client_credentials
+                  client_id: "quenne_client_001"
+                  client_secret: "secret_abc123"
+                  scope: "quantum:read neuromorphic:write edge:execute"
+      responses:
+        '200':
+          description: Authentication successful
+          headers:
+            X-RateLimit-Remaining:
+              schema:
+                type: integer
+              description: Remaining requests in current window
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /auth/token/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh authentication token
+      description: Refresh expired JWT token using refresh token
+      operationId: refreshAuthToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+                  description: Refresh token obtained from initial authentication
+                client_id:
+                  type: string
+                  description: Client identifier
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+
+  /auth/qea-challenge:
+    post:
+      tags:
+        - Authentication
+      summary: Quantum-Enhanced Authentication challenge
+      description: |
+        Initiate Quantum-Enhanced Authentication challenge.
+        Client must encode quantum state and return measurement results.
+      operationId: createQEAAuthChallenge
+      security:
+        - ApiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client_id:
+                  type: string
+                quantum_state:
+                  type: string
+                  format: base64
+                  description: Base64 encoded quantum state
+      responses:
+        '200':
+          description: QEA challenge created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  challenge_id:
+                    type: string
+                  quantum_circuit:
+                    type: string
+                    description: QASM circuit for challenge
+                  timeout:
+                    type: integer
+                    description: Challenge timeout in seconds
+
+  # ==================== QUANTUM LAYER ENDPOINTS ====================
+  /quantum/backends:
+    get:
+      tags:
+        - Quantum
+      summary: List available quantum backends
+      description: |
+        Retrieve list of available quantum computing backends
+        with their current status and capabilities.
+      operationId: listQuantumBackends
+      parameters:
+        - $ref: '#/components/parameters/includeMetrics'
+        - $ref: '#/components/parameters/filterByStatus'
+      responses:
+        '200':
+          description: List of quantum backends
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumBackendsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+  /quantum/backends/{backend_id}:
+    get:
+      tags:
+        - Quantum
+      summary: Get quantum backend details
+      description: Retrieve detailed information about a specific quantum backend
+      operationId: getQuantumBackend
+      parameters:
+        - name: backend_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quantum backend identifier
+      responses:
+        '200':
+          description: Quantum backend details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumBackend'
+
+  /quantum/circuits:
+    post:
+      tags:
+        - Quantum
+      summary: Create quantum circuit
+      description: Create a new quantum circuit for execution
+      operationId: createQuantumCircuit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuantumCircuitCreate'
+      responses:
+        '201':
+          description: Quantum circuit created
+          headers:
+            Location:
+              schema:
+                type: string
+              description: URL to created circuit
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumCircuit'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/ValidationError'
+
+  /quantum/circuits/{circuit_id}:
+    get:
+      tags:
+        - Quantum
+      summary: Get quantum circuit
+      description: Retrieve details of a specific quantum circuit
+      operationId: getQuantumCircuit
+      parameters:
+        - name: circuit_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quantum circuit details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumCircuit'
+
+    delete:
+      tags:
+        - Quantum
+      summary: Delete quantum circuit
+      description: Delete a quantum circuit
+      operationId: deleteQuantumCircuit
+      parameters:
+        - name: circuit_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Circuit deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /quantum/circuits/{circuit_id}/execute:
+    post:
+      tags:
+        - Quantum
+      summary: Execute quantum circuit
+      description: Execute a quantum circuit on a specified backend
+      operationId: executeQuantumCircuit
+      parameters:
+        - name: circuit_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuantumExecutionRequest'
+      responses:
+        '202':
+          description: Circuit execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumJob'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /quantum/jobs/{job_id}:
+    get:
+      tags:
+        - Quantum
+      summary: Get quantum job status
+      description: Retrieve status and results of a quantum job
+      operationId: getQuantumJob
+      parameters:
+        - name: job_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Quantum job details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumJob'
+
+  /quantum/inference:
+    post:
+      tags:
+        - Quantum
+      summary: Perform quantum inference
+      description: Execute quantum state inference on input data
+      operationId: performQuantumInference
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuantumInferenceRequest'
+      responses:
+        '200':
+          description: Inference results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumInferenceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /quantum/memory/patterns:
+    post:
+      tags:
+        - Quantum
+      summary: Store pattern in quantum memory
+      description: Store a pattern in quantum associative memory
+      operationId: storeQuantumPattern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuantumPatternStore'
+      responses:
+        '201':
+          description: Pattern stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumPattern'
+
+  /quantum/memory/recall:
+    post:
+      tags:
+        - Quantum
+      summary: Recall pattern from quantum memory
+      description: Recall patterns from quantum associative memory using partial input
+      operationId: recallQuantumPattern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QuantumPatternRecall'
+      responses:
+        '200':
+          description: Recalled patterns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuantumPatternRecallResponse'
+
+  # ==================== NEUROMORPHIC LAYER ENDPOINTS ====================
+  /neuromorphic/networks:
+    post:
+      tags:
+        - Neuromorphic
+      summary: Create spiking neural network
+      description: Create a new spiking neural network
+      operationId: createSpikingNetwork
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicNetworkCreate'
+      responses:
+        '201':
+          description: Network created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicNetwork'
+
+  /neuromorphic/networks/{network_id}:
+    get:
+      tags:
+        - Neuromorphic
+      summary: Get network details
+      description: Retrieve details of a spiking neural network
+      operationId: getNeuromorphicNetwork
+      parameters:
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Network details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicNetwork'
+
+    put:
+      tags:
+        - Neuromorphic
+      summary: Update network configuration
+      description: Update configuration of a spiking neural network
+      operationId: updateNeuromorphicNetwork
+      parameters:
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicNetworkUpdate'
+      responses:
+        '200':
+          description: Network updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicNetwork'
+
+  /neuromorphic/networks/{network_id}/process:
+    post:
+      tags:
+        - Neuromorphic
+      summary: Process input patterns
+      description: Process input patterns through spiking neural network
+      operationId: processNeuromorphicPatterns
+      parameters:
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicProcessRequest'
+      responses:
+        '200':
+          description: Processing results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicProcessResponse'
+
+  /neuromorphic/networks/{network_id}/train:
+    post:
+      tags:
+        - Neuromorphic
+      summary: Train network
+      description: Train spiking neural network with provided data
+      operationId: trainNeuromorphicNetwork
+      parameters:
+        - name: network_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicTrainingRequest'
+      responses:
+        '202':
+          description: Training started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicTrainingJob'
+
+  /neuromorphic/memory/patterns:
+    post:
+      tags:
+        - Neuromorphic
+      summary: Store pattern in associative memory
+      description: Store a pattern in neuromorphic associative memory
+      operationId: storeNeuromorphicPattern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicPatternStore'
+      responses:
+        '201':
+          description: Pattern stored successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicPattern'
+
+  /neuromorphic/memory/recall:
+    post:
+      tags:
+        - Neuromorphic
+      summary: Recall pattern from associative memory
+      description: Recall patterns from neuromorphic associative memory
+      operationId: recallNeuromorphicPattern
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NeuromorphicPatternRecall'
+      responses:
+        '200':
+          description: Recalled patterns
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NeuromorphicPatternRecallResponse'
+
+  # ==================== EDGE LAYER ENDPOINTS ====================
+  /edge/devices:
+    get:
+      tags:
+        - Edge
+      summary: List edge devices
+      description: Retrieve list of available edge devices
+      operationId: listEdgeDevices
+      parameters:
+        - $ref: '#/components/parameters/filterByStatus'
+        - $ref: '#/components/parameters/filterByType'
+      responses:
+        '200':
+          description: List of edge devices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeDevicesResponse'
+
+  /edge/devices/{device_id}:
+    get:
+      tags:
+        - Edge
+      summary: Get edge device details
+      description: Retrieve details of a specific edge device
+      operationId: getEdgeDevice
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Edge device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeDevice'
+
+  /edge/devices/{device_id}/sensors/read:
+    post:
+      tags:
+        - Edge
+      summary: Read sensor data
+      description: Read data from edge device sensors
+      operationId: readEdgeSensors
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeSensorReadRequest'
+      responses:
+        '200':
+          description: Sensor data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeSensorReadResponse'
+
+  /edge/devices/{device_id}/actuators/control:
+    post:
+      tags:
+        - Edge
+      summary: Control actuators
+      description: Send control commands to edge device actuators
+      operationId: controlEdgeActuators
+      parameters:
+        - name: device_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeActuatorControlRequest'
+      responses:
+        '202':
+          description: Control command accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeActuatorControlResponse'
+
+  /edge/tasks:
+    post:
+      tags:
+        - Edge
+      summary: Execute edge task
+      description: Execute a task on edge device
+      operationId: executeEdgeTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EdgeTaskRequest'
+      responses:
+        '202':
+          description: Task execution started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EdgeTaskResponse'
+
+  /edge/simulation/twins:
+    post:
+      tags:
+        - Edge
+      summary: Create digital twin
+      description: Create a digital twin simulation environment
+      operationId: createDigitalTwin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalTwinCreate'
+      responses:
+        '201':
+          description: Digital twin created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalTwin'
+
+  /edge/simulation/twins/{twin_id}/run:
+    post:
+      tags:
+        - Edge
+      summary: Run simulation
+      description: Run digital twin simulation
+      operationId: runDigitalTwinSimulation
+      parameters:
+        - name: twin_id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalTwinRunRequest'
+      responses:
+        '202':
+          description: Simulation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalTwinRunResponse'
+
+  # ==================== HOMEOSTASIS LAYER ENDPOINTS ====================
+  /homeostasis/health:
+    get:
+      tags:
+        - Homeostasis
+      summary: Get system health
+      description: Retrieve overall system health status
+      operationId: getSystemHealth
+      responses:
+        '200':
+          description: System health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemHealthResponse'
+
+  /homeostasis/setpoints:
+    get:
+      tags:
+        - Homeostasis
+      summary: Get current setpoints
+      description: Retrieve current homeostasis setpoints
+      operationId: getHomeostasisSetpoints
+      responses:
+        '200':
+          description: Current setpoints
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeostasisSetpoints'
+
+    put:
+      tags:
+        - Homeostasis
+      summary: Update setpoints
+      description: Update homeostasis setpoints
+      operationId: updateHomeostasisSetpoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/HomeostasisSetpointsUpdate'
+      responses:
+        '200':
+          description: Setpoints updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HomeostasisSetpoints'
+
+  /homeostasis/anomalies:
+    post:
+      tags:
+        - Homeostasis
+      summary: Report anomaly
+      description: Report system anomaly to homeostasis layer
+      operationId: reportAnomaly
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyReport'
+      responses:
+        '201':
+          description: Anomaly reported
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyReportResponse'
+
+  /homeostasis/anomalies/response:
+    post:
+      tags:
+        - Homeostasis
+      summary: Get anomaly response
+      description: Request response actions for reported anomaly
+      operationId: getAnomalyResponse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AnomalyResponseRequest'
+      responses:
+        '200':
+          description: Anomaly response actions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnomalyResponse'
+
+  /homeostasis/security/scan:
+    post:
+      tags:
+        - Homeostasis
+      summary: Security scan
+      description: Initiate system security scan
+      operationId: initiateSecurityScan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SecurityScanRequest'
+      responses:
+        '202':
+          description: Security scan initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SecurityScanResponse'
+
+  # ==================== INTEGRATION LAYER ENDPOINTS ====================
+  /integration/tasks:
+    post:
+      tags:
+        - Integration
+      summary: Execute cross-layer task
+      description: Execute a task that spans multiple QUENNE layers
+      operationId: executeIntegrationTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationTaskRequest'
+      responses:
+        '202':
+          description: Integration task started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntegrationTaskResponse'
+
+  /integration/protocols:
+    get:
+      tags:
+        - Integration
+      summary: Get protocol status
+      description: Retrieve status of all integration protocols
+      operationId: getProtocolStatus
+      responses:
+        '200':
+          description: Protocol status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolStatusResponse'
+
+  /integration/protocols/{protocol_name}:
+    put:
+      tags:
+        - Integration
+      summary: Configure protocol
+      description: Configure integration protocol parameters
+      operationId: configureProtocol
+      parameters:
+        - name: protocol_name
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [QNI, NEI, EHI, HIQ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProtocolConfiguration'
+      responses:
+        '200':
+          description: Protocol configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProtocolStatus'
+
+  /integration/timing:
+    get:
+      tags:
+        - Integration
+      summary: Get timing synchronization status
+      description: Retrieve timing synchronization status across layers
+      operationId: getTimingStatus
+      responses:
+        '200':
+          description: Timing synchronization status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TimingStatusResponse'
+
+  /integration/events:
+    post:
+      tags:
+        - Integration
+      summary: Publish event
+      description: Publish event to integration event bus
+      operationId: publishIntegrationEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IntegrationEvent'
+      responses:
+        '202':
+          description: Event published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventPublishResponse'
+
+  /integration/events/subscriptions:
+    post:
+      tags:
+        - Integration
+      summary: Subscribe to events
+      description: Subscribe to integration event bus
+      operationId: subscribeIntegrationEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventSubscription'
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventSubscriptionResponse'
+
+  # ==================== MONITORING ENDPOINTS ====================
+  /monitoring/metrics/query:
+    post:
+      tags:
+        - Monitoring
+      summary: Query metrics
+      description: Query system metrics with filters and aggregation
+      operationId: queryMetrics
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MetricsQuery'
+      responses:
+        '200':
+          description: Metrics query results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MetricsResponse'
+
+  /monitoring/export:
+    post:
+      tags:
+        - Monitoring
+      summary: Export data
+      description: Export monitoring data in various formats
+      operationId: exportMonitoringData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExportRequest'
+      responses:
+        '202':
+          description: Export job created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExportResponse'
+
+  /rate-limits:
+    get:
+      tags:
+        - System
+      summary: Check rate limits
+      description: Check current rate limit usage and quotas
+      operationId: getRateLimits
+      responses:
+        '200':
+          description: Rate limit status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimitStatus'
+
+  # ==================== WEBSOCKET ENDPOINTS ====================
+  /ws/v1:
+    get:
+      tags:
+        - System
+      summary: WebSocket connection
+      description: |
+        Establish WebSocket connection for real-time updates.
+        Use for receiving quantum job updates, neuromorphic spikes,
+        edge sensor data, and system metrics.
+      operationId: connectWebSocket
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: JWT authentication token
+      responses:
+        '101':
+          description: Switching to WebSocket protocol
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /events/v1:
+    get:
+      tags:
+        - System
+      summary: Server-Sent Events endpoint
+      description: Server-Sent Events endpoint for real-time updates
+      operationId: connectSSE
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+          description: JWT authentication token
+        - name: channels
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          description: Event channels to subscribe to
+      responses:
+        '200':
+          description: SSE stream established
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                format: binary
+
+components:
+  schemas:
+    # ==================== COMMON SCHEMAS ====================
+    Timestamp:
+      type: object
+      properties:
+        nanoseconds:
+          type: integer
+          format: int64
+          description: Nanoseconds since epoch
+        iso8601:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp
+      required:
+        - nanoseconds
+        - iso8601
+
+    EnergyMeasurement:
+      type: object
+      properties:
+        joules:
+          type: number
+          format: float
+          description: Energy consumption in joules
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        source:
+          type: string
+          description: Energy measurement source
+      required:
+        - joules
+        - timestamp
+
+    LatencyMeasurement:
+      type: object
+      properties:
+        milliseconds:
+          type: number
+          format: float
+          description: Latency in milliseconds
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        operation:
+          type: string
+          description: Operation being measured
+      required:
+        - milliseconds
+        - timestamp
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        page_size:
+          type: integer
+          minimum: 1
+          maximum: 1000
+          default: 100
+        total_pages:
+          type: integer
+        total_items:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          description: Error code
+        message:
+          type: string
+          description: Human-readable error message
+        details:
+          type: object
+          additionalProperties: true
+          description: Additional error details
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        request_id:
+          type: string
+          description: Request identifier
+        documentation_url:
+          type: string
+          format: uri
+          description: URL to error documentation
+      required:
+        - code
+        - message
+        - timestamp
+
+    # ==================== AUTHENTICATION SCHEMAS ====================
+    AuthTokenRequest:
+      type: object
+      properties:
+        grant_type:
+          type: string
+          enum: [client_credentials, refresh_token]
+          description: OAuth2 grant type
+        client_id:
+          type: string
+          description: Client identifier
+        client_secret:
+          type: string
+          description: Client secret
+        scope:
+          type: string
+          description: Requested scope (space-separated)
+      required:
+        - grant_type
+        - client_id
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: JWT access token
+        token_type:
+          type: string
+          enum: [Bearer]
+          default: Bearer
+        expires_in:
+          type: integer
+          description: Token expiration in seconds
+        refresh_token:
+          type: string
+          description: Refresh token
+        scope:
+          type: string
+          description: Granted scope
+        energy_budget:
+          type: number
+          description: Energy budget in joules
+        rate_limit:
+          type: integer
+          description: Request rate limit per minute
+      required:
+        - access_token
+        - token_type
+        - expires_in
+
+    # ==================== QUANTUM SCHEMAS ====================
+    QuantumBackend:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Backend identifier
+        name:
+          type: string
+          description: Backend name
+        provider:
+          type: string
+          description: Provider name
+        status:
+          type: string
+          enum: [available, busy, offline, maintenance]
+        qubits:
+          type: integer
+          description: Number of qubits
+        coherence_time:
+          type: number
+          description: Qubit coherence time in microseconds
+        gate_fidelity:
+          type: number
+          description: Average gate fidelity
+        queue_depth:
+          type: integer
+          description: Current queue depth
+        estimated_wait:
+          type: number
+          description: Estimated wait time in seconds
+        capabilities:
+          type: array
+          items:
+            type: string
+          description: Supported capabilities
+        noise_model:
+          type: object
+          description: Default noise model
+      required:
+        - id
+        - name
+        - provider
+        - status
+        - qubits
+
+    QuantumBackendsResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuantumBackend'
+        meta:
+          type: object
+          properties:
+            total_backends:
+              type: integer
+            available_backends:
+              type: integer
+            pagination:
+              $ref: '#/components/schemas/Pagination'
+
+    QuantumCircuitCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Circuit name
+        description:
+          type: string
+          description: Circuit description
+        qasm:
+          type: string
+          description: QASM 2.0 circuit definition
+        parameters:
+          type: object
+          properties:
+            num_qubits:
+              type: integer
+            depth:
+              type: integer
+            optimization_level:
+              type: integer
+              minimum: 0
+              maximum: 3
+            noise_model:
+              type: string
+        metadata:
+          type: object
+          additionalProperties: true
+      required:
+        - name
+        - qasm
+
+    QuantumCircuit:
+      type: object
+      properties:
+        circuit_id:
+          type: string
+        name:
+          type: string
+        hash:
+          type: string
+          description: SHA256 hash of circuit
+        qubits:
+          type: integer
+        depth:
+          type: integer
+        gates:
+          type: integer
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        estimated_run_time:
+          type: number
+          description: Estimated run time in seconds
+        estimated_energy:
+          type: number
+          description: Estimated energy consumption in joules
+      required:
+        - circuit_id
+        - name
+        - qubits
+        - created_at
+
+    QuantumExecutionRequest:
+      type: object
+      properties:
+        backend_id:
+          type: string
+          description: Target backend identifier
+        shots:
+          type: integer
+          minimum: 1
+          maximum: 100000
+          default: 1024
+        optimization:
+          type: object
+          properties:
+            level:
+              type: integer
+              minimum: 0
+              maximum: 3
+            noise_adaptive:
+              type: boolean
+        noise_model:
+          type: object
+          properties:
+            type:
+              type: string
+            single_qubit_error:
+              type: number
+            two_qubit_error:
+              type: number
+        execution_constraints:
+          type: object
+          properties:
+            max_time:
+              type: number
+            max_energy:
+              type: number
+            required_fidelity:
+              type: number
+      required:
+        - backend_id
+
+    QuantumJob:
+      type: object
+      properties:
+        job_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed, cancelled]
+        estimated_completion:
+          $ref: '#/components/schemas/Timestamp'
+        queue_position:
+          type: integer
+        backend:
+          type: string
+        circuit_hash:
+          type: string
+        monitor_url:
+          type: string
+          format: uri
+        results:
+          type: object
+          properties:
+            counts:
+              type: object
+              additionalProperties:
+                type: integer
+            statevector:
+              type: string
+              format: base64
+            execution_time:
+              type: number
+            energy_consumed:
+              type: number
+      required:
+        - job_id
+        - status
+
+    QuantumInferenceRequest:
+      type: object
+      properties:
+        input_data:
+          type: object
+          properties:
+            type:
+              type: string
+            data:
+              type: array
+              items:
+                type: number
+            encoding:
+              type: string
+        inference_type:
+          type: string
+          enum: [probabilistic_reasoning, pattern_recognition, optimization]
+        model:
+          type: object
+          properties:
+            type:
+              type: string
+            prior:
+              type: array
+              items:
+                type: number
+            evidence:
+              type: array
+              items:
+                type: number
+        parameters:
+          type: object
+          properties:
+            num_hypotheses:
+              type: integer
+            confidence_threshold:
+              type: number
+            return_statevector:
+              type: boolean
+      required:
+        - input_data
+        - inference_type
+
+    QuantumInferenceResponse:
+      type: object
+      properties:
+        inference_id:
+          type: string
+        result:
+          type: object
+          properties:
+            hypotheses:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  probability:
+                    type: number
+                  confidence:
+                    type: number
+            most_probable:
+              type: integer
+            uncertainty:
+              type: number
+            statevector:
+              type: string
+              format: base64
+        metrics:
+          type: object
+          properties:
+            execution_time:
+              type: number
+            energy_consumed:
+              type: number
+            quantum_volume:
+              type: integer
+            fidelity:
+              type: number
+      required:
+        - inference_id
+        - result
+
+    QuantumPatternStore:
+      type: object
+      properties:
+        pattern:
+          type: object
+          properties:
+            id:
+              type: string
+            data:
+              type: array
+              items:
+                type: number
+            tags:
+              type: array
+              items:
+                type: string
+            metadata:
+              type: object
+        encoding:
+          type: object
+          properties:
+            method:
+              type: string
+              enum: [amplitude, phase, hybrid]
+            compression:
+              type: string
+            error_correction:
+              type: boolean
+      required:
+        - pattern
+
+    QuantumPattern:
+      type: object
+      properties:
+        pattern_id:
+          type: string
+        stored_at:
+          $ref: '#/components/schemas/Timestamp'
+        size:
+          type: integer
+          description: Pattern size in qubits
+        encoding:
+          type: string
+        compression_ratio:
+          type: number
+        estimated_retrieval_time:
+          type: number
+      required:
+        - pattern_id
+        - stored_at
+
+    QuantumPatternRecall:
+      type: object
+      properties:
+        partial_pattern:
+          type: array
+          items:
+            oneOf:
+              - type: number
+              - type: null
+          description: Partial pattern with null values for unknown elements
+        constraints:
+          type: object
+          properties:
+            min_similarity:
+              type: number
+            max_patterns:
+              type: integer
+            timeout:
+              type: number
+        options:
+          type: object
+          properties:
+            return_complete:
+              type: boolean
+            include_similarity:
+              type: boolean
+            include_metadata:
+              type: boolean
+      required:
+        - partial_pattern
+
+    QuantumPatternRecallResponse:
+      type: object
+      properties:
+        recalled_patterns:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuantumPattern'
+        recall_time:
+          type: number
+        energy_per_pattern:
+          type: number
+      required:
+        - recalled_patterns
+
+    # ==================== NEUROMORPHIC SCHEMAS ====================
+    NeuromorphicNetworkCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        specification:
+          type: object
+          properties:
+            num_neurons:
+              type: integer
+            num_synapses:
+              type: integer
+            neuron_model:
+              type: string
+            synapse_model:
+              type: string
+            connectivity:
+              type: object
+        initial_weights:
+          type: object
+          properties:
+            distribution:
+              type: string
+            mean:
+              type: number
+            std:
+              type: number
+      required:
+        - name
+        - specification
+
+    NeuromorphicNetwork:
+      type: object
+      properties:
+        network_id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [created, initializing, ready, running, error]
+        neurons:
+          type: object
+          properties:
+            total:
+              type: integer
+            excitatory:
+              type: integer
+            inhibitory:
+              type: integer
+        synapses:
+          type: integer
+        memory_footprint:
+          type: integer
+          description: Memory usage in bytes
+        estimated_power:
+          type: number
+          description: Estimated power consumption in watts
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - network_id
+        - name
+        - status
+
+    NeuromorphicNetworkUpdate:
+      type: object
+      properties:
+        learning:
+          type: object
+          properties:
+            enabled:
+              type: boolean
+            rule:
+              type: string
+            parameters:
+              type: object
+        homeostasis:
+          type: object
+          properties:
+            target_rate:
+              type: number
+            regulation_strength:
+              type: number
+        simulation:
+          type: object
+          properties:
+            time_step:
+              type: number
+            duration:
+              type: number
+
+    NeuromorphicProcessRequest:
+      type: object
+      properties:
+        input_patterns:
+          type: array
+          items:
+            type: object
+            properties:
+              pattern_id:
+                type: string
+              neurons:
+                type: array
+                items:
+                  type: integer
+              spike_times:
+                type: array
+                items:
+                  type: number
+              weights:
+                type: array
+                items:
+                  type: number
+        simulation:
+          type: object
+          properties:
+            duration:
+              type: number
+            record_spikes:
+              type: boolean
+            record_voltages:
+              type: boolean
+            record_weights:
+              type: boolean
+        constraints:
+          type: object
+          properties:
+            max_time:
+              type: number
+            max_energy:
+              type: number
+      required:
+        - input_patterns
+
+    NeuromorphicProcessResponse:
+      type: object
+      properties:
+        simulation_id:
+          type: string
+        output_patterns:
+          type: array
+          items:
+            type: object
+            properties:
+              pattern_id:
+                type: string
+              neurons:
+                type: array
+                items:
+                  type: integer
+              spike_times:
+                type: array
+                items:
+                  type: number
+              firing_rate:
+                type: number
+        metrics:
+          type: object
+          properties:
+            simulation_time:
+              type: number
+            total_spikes:
+              type: integer
+            average_firing_rate:
+              type: number
+            energy_consumed:
+              type: number
+            plasticity_updates:
+              type: integer
+        recordings:
+          type: object
+          properties:
+            spikes_url:
+              type: string
+              format: uri
+            weights_url:
+              type: string
+              format: uri
+      required:
+        - simulation_id
+
+    NeuromorphicTrainingRequest:
+      type: object
+      properties:
+        training_data:
+          type: object
+          properties:
+            patterns:
+              type: array
+              items:
+                type: object
+            validation_split:
+              type: number
+            shuffle:
+              type: boolean
+        training_parameters:
+          type: object
+          properties:
+            epochs:
+              type: integer
+            batch_size:
+              type: integer
+            learning_rate:
+              type: number
+            stopping_criteria:
+              type: object
+      required:
+        - training_data
+
+    NeuromorphicTrainingJob:
+      type: object
+      properties:
+        training_id:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed, paused]
+        current_epoch:
+          type: integer
+        metrics:
+          type: object
+          properties:
+            training_loss:
+              type: number
+            validation_accuracy:
+              type: number
+            learning_rate:
+              type: number
+            plasticity_changes:
+              type: integer
+        monitor_url:
+          type: string
+          format: uri
+      required:
+        - training_id
+        - status
+
+    NeuromorphicPatternStore:
+      type: object
+      properties:
+        network_id:
+          type: string
+        pattern:
+          type: object
+          properties:
+            id:
+              type: string
+            data:
+              type: array
+              items:
+                type: number
+            encoding:
+              type: string
+            strength:
+              type: number
+        associations:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+      required:
+        - network_id
+        - pattern
+
+    NeuromorphicPattern:
+      type: object
+      properties:
+        pattern_id:
+          type: string
+        network_id:
+          type: string
+        stored_at:
+          $ref: '#/components/schemas/Timestamp'
+        strength:
+          type: number
+        associations:
+          type: array
+          items:
+            type: string
+      required:
+        - pattern_id
+        - network_id
+
+    NeuromorphicPatternRecall:
+      type: object
+      properties:
+        network_id:
+          type: string
+        cue_pattern:
+          type: object
+          properties:
+            partial:
+              type: array
+              items:
+                oneOf:
+                  - type: number
+                  - type: null
+            confidence:
+              type: array
+              items:
+                type: number
+        recall_parameters:
+          type: object
+          properties:
+            method:
+              type: string
+            iterations:
+              type: integer
+            threshold:
+              type: number
+            noise_tolerance:
+              type: number
+      required:
+        - network_id
+        - cue_pattern
+
+    NeuromorphicPatternRecallResponse:
+      type: object
+      properties:
+        recalled_patterns:
+          type: array
+          items:
+            $ref: '#/components/schemas/NeuromorphicPattern'
+        recall_metrics:
+          type: object
+          properties:
+            total_time:
+              type: number
+            total_energy:
+              type: number
+            neurons_activated:
+              type: integer
+            synapses_accessed:
+              type: integer
+      required:
+        - recalled_patterns
+
+    # ==================== EDGE SCHEMAS ====================
+    EdgeDevicesResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/EdgeDevice'
+        meta:
+          type: object
+          properties:
+            total_devices:
+              type: integer
+            available_devices:
+              type: integer
+
+    EdgeDevice:
+      type: object
+      properties:
+        device_id:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [ground_robot, aerial_drone, static_sensor, mobile_robot]
+        status:
+          type: string
+          enum: [available, busy, offline, maintenance]
+        capabilities:
+          type: array
+          items:
+            type: string
+        location:
+          type: object
+          properties:
+            x:
+              type: number
+            y:
+              type: number
+            z:
+              type: number
+            orientation:
+              type: array
+              items:
+                type: number
+        battery:
+          type: number
+          minimum: 0
+          maximum: 100
+        network:
+          type: object
+          properties:
+            signal_strength:
+              type: number
+            latency:
+              type: number
+        last_seen:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - device_id
+        - name
+        - type
+        - status
+
+    EdgeSensorReadRequest:
+      type: object
+      properties:
+        sensors:
+          type: array
+          items:
+            type: string
+          description: Sensors to read from
+        parameters:
+          type: object
+          additionalProperties:
+            type: object
+          description: Sensor-specific parameters
+        duration:
+          type: number
+          description: Duration to read for in seconds
+        compression:
+          type: string
+          enum: [none, gzip, auto]
+      required:
+        - sensors
+
+    EdgeSensorReadResponse:
+      type: object
+      properties:
+        reading_id:
+          type: string
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        sensor_data:
+          type: object
+          additionalProperties: true
+        data_size:
+          type: integer
+          description: Total data size in bytes
+        collection_time:
+          type: number
+          description: Actual collection time in seconds
+      required:
+        - reading_id
+        - timestamp
+        - sensor_data
+
+    EdgeActuatorControlRequest:
+      type: object
+      properties:
+        commands:
+          type: array
+          items:
+            type: object
+            properties:
+              actuator:
+                type: string
+              action:
+                type: string
+              parameters:
+                type: object
+              constraints:
+                type: object
+        control_mode:
+          type: string
+          enum: [velocity, position, torque]
+        duration:
+          type: number
+          description: Command duration in seconds
+        feedback_required:
+          type: boolean
+      required:
+        - commands
+
+    EdgeActuatorControlResponse:
+      type: object
+      properties:
+        command_id:
+          type: string
+        status:
+          type: string
+          enum: [accepted, executing, completed, failed]
+        estimated_completion:
+          $ref: '#/components/schemas/Timestamp'
+        actuator_status:
+          type: object
+          additionalProperties: true
+        safety_status:
+          type: object
+          properties:
+            within_bounds:
+              type: boolean
+            obstacle_distance:
+              type: number
+            emergency_stop:
+              type: boolean
+      required:
+        - command_id
+        - status
+
+    EdgeTaskRequest:
+      type: object
+      properties:
+        task_type:
+          type: string
+          enum: [navigation, manipulation, inspection, data_collection]
+        device_id:
+          type: string
+        parameters:
+          type: object
+          additionalProperties: true
+        constraints:
+          type: object
+          properties:
+            max_time:
+              type: number
+            max_energy:
+              type: number
+            safety_requirements:
+              type: object
+        monitoring:
+          type: object
+          properties:
+            update_interval:
+              type: number
+            metrics:
+              type: array
+              items:
+                type: string
+      required:
+        - task_type
+        - device_id
+
+    EdgeTaskResponse:
+      type: object
+      properties:
+        task_id:
+          type: string
+        status:
+          type: string
+          enum: [planning, executing, completed, failed, cancelled]
+        estimated_duration:
+          type: number
+        estimated_energy:
+          type: number
+        current_step:
+          type: string
+        progress:
+          type: number
+          minimum: 0
+          maximum: 1
+        monitor_url:
+          type: string
+          format: uri
+        control_url:
+          type: string
+          format: uri
+      required:
+        - task_id
+        - status
+
+    DigitalTwinCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        environment:
+          type: object
+          properties:
+            type:
+              type: string
+            dimensions:
+              type: array
+              items:
+                type: number
+            objects:
+              type: array
+              items:
+                type: object
+        robots:
+          type: array
+          items:
+            type: object
+        physics:
+          type: object
+          properties:
+            engine:
+              type: string
+            gravity:
+              type: number
+            time_step:
+              type: number
+      required:
+        - name
+        - environment
+
+    DigitalTwin:
+      type: object
+      properties:
+        twin_id:
+          type: string
+        name:
+          type: string
+        status:
+          type: string
+          enum: [created, running, paused, stopped]
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        environment:
+          type: object
+        physics:
+          type: object
+      required:
+        - twin_id
+        - name
+        - status
+
+    DigitalTwinRunRequest:
+      type: object
+      properties:
+        duration:
+          type: number
+        speed:
+          type: number
+          description: Simulation speed multiplier
+        record_data:
+          type: boolean
+        data_types:
+          type: array
+          items:
+            type: string
+        real_time:
+          type: boolean
+          description: Whether to run in real-time
+      required:
+        - duration
+
+    DigitalTwinRunResponse:
+      type: object
+      properties:
+        simulation_id:
+          type: string
+        status:
+          type: string
+          enum: [running, completed, failed]
+        estimated_completion:
+          $ref: '#/components/schemas/Timestamp'
+        data_url:
+          type: string
+          format: uri
+        monitor_url:
+          type: string
+          format: uri
+      required:
+        - simulation_id
+        - status
+
+    # ==================== HOMEOSTASIS SCHEMAS ====================
+    SystemHealthResponse:
+      type: object
+      properties:
+        overall_health:
+          type: string
+          enum: [green, yellow, red]
+        timestamp:
+          $ref: '#/components/schemas/Timestamp'
+        layers:
+          type: object
+          properties:
+            quantum:
+              $ref: '#/components/schemas/LayerHealth'
+            neuromorphic:
+              $ref: '#/components/schemas/LayerHealth'
+            edge:
+              $ref: '#/components/schemas/LayerHealth'
+        system_metrics:
+          type: object
+          properties:
+            total_power:
+              type: number
+            total_temperature:
+              type: number
+            availability:
+              type: number
+            energy_efficiency:
+              type: number
+      required:
+        - overall_health
+        - timestamp
+
+    LayerHealth:
+      type: object
+      properties:
+        health:
+          type: string
+          enum: [green, yellow, red]
+        metrics:
+          type: object
+          additionalProperties: true
+        alerts:
+          type: array
+          items:
+            type: string
+      required:
+        - health
+
+    HomeostasisSetpoints:
+      type: object
+      properties:
+        quantum:
+          type: object
+          properties:
+            fidelity:
+              type: number
+            coherence_time:
+              type: number
+            temperature:
+              type: number
+            power:
+              type: number
+        neuromorphic:
+          type: object
+          properties:
+            firing_rate:
+              type: number
+            learning_rate:
+              type: number
+            temperature:
+              type: number
+            power:
+              type: number
+        edge:
+          type: object
+          properties:
+            latency:
+              type: number
+            battery_min:
+              type: number
+            network_latency:
+              type: number
+            power:
+              type: number
+        system:
+          type: object
+          properties:
+            total_power:
+              type: number
+            max_temperature:
+              type: number
+            availability:
+              type: number
+      required:
+        - quantum
+        - neuromorphic
+        - edge
+        - system
+
+    HomeostasisSetpointsUpdate:
+      type: object
+      properties:
+        setpoints:
+          $ref: '#/components/schemas/HomeostasisSetpoints'
+        adjustment_strategy:
+          type: string
+          enum: [immediate, gradual, scheduled]
+        adjustment_rate:
+          type: number
+        safety_limits:
+          type: object
+          properties:
+            max_adjustment:
+              type: number
+            cooldown_period:
+              type: number
+      required:
+        - setpoints
+
+    AnomalyReport:
+      type: object
+      properties:
+        layer:
+          type: string
+          enum: [quantum, neuromorphic, edge, system]
+        component:
+          type: string
+        anomaly_type:
+          type: string
+        severity:
+          type: string
+          enum: [info, warning, error, critical]
+        metrics:
+          type: object
+          additionalProperties: true
+        context:
+          type: object
+          additionalProperties: true
+      required:
+        - layer
+        - anomaly_type
+        - severity
+
+    AnomalyReportResponse:
+      type: object
+      properties:
+        anomaly_id:
+          type: string
+        reported_at:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          type: string
+          enum: [reported, investigating, resolving, resolved]
+        priority:
+          type: string
+          enum: [low, medium, high, critical]
+      required:
+        - anomaly_id
+        - reported_at
+        - status
+
+    AnomalyResponseRequest:
+      type: object
+      properties:
+        anomaly_id:
+          type: string
+        requested_actions:
+          type: array
+          items:
+            type: string
+        response_constraints:
+          type: object
+          properties:
+            max_response_time:
+              type: number
+            allowed_disruption:
+              type: string
+            preserve_data:
+              type: boolean
+      required:
+        - anomaly_id
+
+    AnomalyResponse:
+      type: object
+      properties:
+        response_id:
+          type: string
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+              layer:
+                type: string
+              parameters:
+                type: object
+              estimated_effect:
+                type: string
+        expected_outcome:
+          type: object
+          properties:
+            temperature_reduction:
+              type: number
+            time_to_recovery:
+              type: number
+            performance_impact:
+              type: number
+        monitor_url:
+          type: string
+          format: uri
+      required:
+        - response_id
+        - actions
+
+    SecurityScanRequest:
+      type: object
+      properties:
+        scan_type:
+          type: string
+          enum: [quick, comprehensive, deep]
+        targets:
+          type: array
+          items:
+            type: string
+        intensity:
+          type: string
+          enum: [light, medium, deep]
+        allowed_disruption:
+          type: string
+          enum: [none, low, medium, high]
+        report_format:
+          type: string
+          enum: [summary, detailed, full]
+      required:
+        - scan_type
+        - targets
+
+    SecurityScanResponse:
+      type: object
+      properties:
+        scan_id:
+          type: string
+        status:
+          type: string
+          enum: [queued, running, completed, failed]
+        estimated_completion:
+          $ref: '#/components/schemas/Timestamp'
+        current_target:
+          type: string
+        progress:
+          type: number
+        findings_so_far:
+          type: array
+          items:
+            type: object
+        monitor_url:
+          type: string
+          format: uri
+      required:
+        - scan_id
+        - status
+
+    # ==================== INTEGRATION SCHEMAS ====================
+    IntegrationTaskRequest:
+      type: object
+      properties:
+        task_type:
+          type: string
+          enum: [anomaly_detection, pattern_recognition, optimization, prediction]
+        description:
+          type: string
+        data_source:
+          type: object
+          properties:
+            type:
+              type: string
+            device_id:
+              type: string
+            stream_url:
+              type: string
+              format: uri
+        processing_pipeline:
+          type: array
+          items:
+            type: object
+            properties:
+              layer:
+                type: string
+              action:
+                type: string
+              parameters:
+                type: object
+        constraints:
+          type: object
+          properties:
+            max_latency:
+              type: number
+            max_energy:
+              type: number
+            required_accuracy:
+              type: number
+            data_privacy:
+              type: string
+        monitoring:
+          type: object
+          properties:
+            update_interval:
+              type: number
+            metrics:
+              type: array
+              items:
+                type: string
+      required:
+        - task_type
+        - processing_pipeline
+
+    IntegrationTaskResponse:
+      type: object
+      properties:
+        task_id:
+          type: string
+        status:
+          type: string
+          enum: [initializing, running, completed, failed, cancelled]
+        estimated_duration:
+          type: number
+        estimated_energy:
+          type: number
+        current_step:
+          type: string
+        progress:
+          type: number
+        layer_status:
+          type: object
+          additionalProperties:
+            type: string
+        monitor_url:
+          type: string
+          format: uri
+        control_url:
+          type: string
+          format: uri
+        results_url:
+          type: string
+          format: uri
+      required:
+        - task_id
+        - status
+
+    ProtocolStatusResponse:
+      type: object
+      properties:
+        protocols:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProtocolStatus'
+        last_updated:
+          $ref: '#/components/schemas/Timestamp'
+      required:
+        - protocols
+
+    ProtocolStatus:
+      type: object
+      properties:
+        name:
+          type: string
+          enum: [QNI, NEI, EHI, HIQ]
+        version:
+          type: string
+        status:
+          type: string
+          enum: [active, degraded, offline, maintenance]
+        throughput:
+          type: number
+          description: Throughput in Gbps
+        latency:
+          type: number
+          description: Latency in seconds
+        error_rate:
+          type: number
+          description: Error rate as percentage
+        connections:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+        - name
+        - version
+        - status
+
+    ProtocolConfiguration:
+      type: object
+      properties:
+        version:
+          type: string
+        parameters:
+          type: object
+          properties:
+            compression:
+              type: string
+            encryption:
+              type: string
+            error_correction:
+              type: string
+            synchronization:
+              type: string
+        performance_targets:
+          type: object
+          properties:
+            max_latency:
+              type: number
+            min_throughput:
+              type: number
+            max_error_rate:
+              type: number
+      required:
+        - version
+
+    TimingStatusResponse:
+      type: object
+      properties:
+        master_clock:
+          type: object
+          properties:
+            source:
+              type: string
+            time:
+              $ref: '#/components/schemas/Timestamp'
+            accuracy:
+              type: number
+        layer_synchronization:
+          type: object
+          properties:
+            quantum:
+              $ref: '#/components/schemas/LayerSyncStatus'
+            neuromorphic:
+              $ref: '#/components/schemas/LayerSyncStatus'
+            edge:
+              $ref: '#/components/schemas/LayerSyncStatus'
+        event_alignment:
+          type: object
+          properties:
+            max_skew:
+              type: number
+            correction_applied:
+              type: boolean
+            alignment_accuracy:
+              type: number
+      required:
+        - master_clock
+
+    LayerSyncStatus:
+      type: object
+      properties:
+        offset:
+          type: number
+          description: Time offset in seconds
+        jitter:
+          type: number
+          description: Timing jitter in seconds
+        status:
+          type: string
+          enum: [synchronized, synchronizing, out_of_sync, error]
+      required:
+        - offset
+        - jitter
+        - status
+
+    IntegrationEvent:
+      type: object
+      properties:
+        event_type:
+          type: string
+        source_layer:
+          type: string
+        source_component:
+          type: string
+        payload:
+          type: object
+          additionalProperties: true
+        priority:
+          type: string
+          enum: [low, normal, high, critical]
+        routing:
+          type: object
+          properties:
+            layers:
+              type: array
+              items:
+                type: string
+            delivery_guarantee:
+              type: string
+            time_to_live:
+              type: number
+      required:
+        - event_type
+        - source_layer
+        - payload
+
+    EventPublishResponse:
+      type: object
+      properties:
+        event_id:
+          type: string
+        published_at:
+          $ref: '#/components/schemas/Timestamp'
+        delivery_status:
+          type: string
+          enum: [queued, delivered, failed]
+        estimated_delivery:
+          type: number
+      required:
+        - event_id
+        - published_at
+
+    EventSubscription:
+      type: object
+      properties:
+        subscription_id:
+          type: string
+        event_types:
+          type: array
+          items:
+            type: string
+        filters:
+          type: object
+          properties:
+            source_layer:
+              type: array
+              items:
+                type: string
+            priority:
+              type: array
+              items:
+                type: string
+            timestamp:
+              type: object
+              properties:
+                after:
+                  $ref: '#/components/schemas/Timestamp'
+                before:
+                  $ref: '#/components/schemas/Timestamp'
+        delivery:
+          type: object
+          properties:
+            method:
+              type: string
+              enum: [webhook, websocket, sse]
+            url:
+              type: string
+              format: uri
+            format:
+              type: string
+            batch_size:
+              type: integer
+            max_latency:
+              type: number
+      required:
+        - subscription_id
+        - event_types
+
+    EventSubscriptionResponse:
+      type: object
+      properties:
+        subscription_id:
+          type: string
+        created_at:
+          $ref: '#/components/schemas/Timestamp'
+        status:
+          type: string
+          enum: [active, paused, cancelled]
+        monitor_url:
+          type: string
+          format: uri
+      required:
+        - subscription_id
+        - created_at
+        - status
+
+    # ==================== MONITORING SCHEMAS ====================
+    MetricsQuery:
+      type: object
+      properties:
+        query:
+          type: object
+          properties:
+            metric_names:
+              type: array
+              items:
+                type: string
+            time_range:
+              type: object
+              properties:
+                start:
+                  $ref: '#/components/schemas/Timestamp'
+                end:
+                  $ref: '#/components/schemas/Timestamp'
+            aggregation:
+              type: object
+              properties:
+                function:
+                  type: string
+                  enum: [mean, sum, min, max, count]
+                window:
+                  type: string
+            filters:
+              type: object
+              additionalProperties: true
+        format:
+          type: string
+          enum: [time_series, aggregated, raw]
+        compression:
+          type: string
+          enum: [none, gzip, snappy]
+      required:
+        - query
+
+    MetricsResponse:
+      type: object
+      properties:
+        metrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/MetricSeries'
+        query_time:
+          type: number
+        data_points:
+          type: integer
+        data_size:
+          type: integer
+      required:
+        - metrics
+        - query_time
+
+    MetricSeries:
+      type: object
+      properties:
+        name:
+          type: string
+        values:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                $ref: '#/components/schemas/Timestamp'
+              value:
+                type: number
+        statistics:
+          type: object
+          properties:
+            mean:
+              type: number
+            min:
+              type: number
+            max:
+              type: number
+            std:
+              type: number
+      required:
+        - name
+        - values
+
+    ExportRequest:
+      type: object
+      properties:
+        data_types:
+          type: array
+          items:
+            type: string
+        time_range:
+          type: object
+          properties:
+            start:
+              $ref: '#/components/schemas/Timestamp'
+            end:
+              $ref: '#/components/schemas/Timestamp'
+        filters:
+          type: object
+          properties:
+            layers:
+              type: array
+              items:
+                type: string
+            event_types:
+              type: array
+              items:
+                type: string
+        format:
+          type: string
+          enum: [parquet, csv, json, avro]
+        compression:
+          type: string
+          enum: [none, gzip, snappy, zstd]
+        destination:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [s3, gcs, azure, local]
+            bucket:
+              type: string
+            prefix:
+              type: string
+        notification:
+          type: object
+          properties:
+            email:
+              type: string
+              format: email
+            webhook:
+              type: string
+              format: uri
+      required:
+        - data_types
+        - time_range
+
+    ExportResponse:
+      type: object
+      properties:
+        export_id:
+          type: string
+        status:
+          type: string
+          enum: [processing, completed, failed]
+        estimated_size:
+          type: integer
+        estimated_records:
+          type: integer
+        estimated_completion:
+          $ref: '#/components/schemas/Timestamp'
+        download_url:
+          type: string
+          format: uri
+        status_url:
+          type: string
+          format: uri
+      required:
+        - export_id
+        - status
+
+    RateLimitStatus:
+      type: object
+      properties:
+        current_limits:
+          type: object
+          properties:
+            requests_per_minute:
+              type: integer
+            energy_per_hour:
+              type: number
+            concurrent_requests:
+              type: integer
+        current_usage:
+          type: object
+          properties:
+            requests_last_minute:
+              type: integer
+            energy_last_hour:
+              type: number
+            concurrent_requests:
+              type: integer
+        remaining:
+          type: object
+          properties:
+            requests_this_minute:
+              type: integer
+            energy_this_hour:
+              type: number
+            concurrent_capacity:
+              type: integer
+        reset_times:
+          type: object
+          properties:
+            requests:
+              $ref: '#/components/schemas/Timestamp'
+            energy:
+              $ref: '#/components/schemas/Timestamp'
+      required:
+        - current_limits
+        - current_usage
+        - remaining
+
+  parameters:
+    includeMetrics:
+      name: include_metrics
+      in: query
+      schema:
+        type: boolean
+        default: false
+      description: Include detailed metrics in response
+
+    filterByStatus:
+      name: status
+      in: query
+      schema:
+        type: string
+        enum: [available, busy, offline, maintenance]
+      description: Filter by status
+
+    filterByType:
+      name: type
+      in: query
+      schema:
+        type: string
+        enum: [ground_robot, aerial_drone, static_sensor, mobile_robot]
+      description: Filter by device type
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: BAD_REQUEST
+            message: Invalid request parameters
+            details:
+              field: "backend_id"
+              reason: "must be a valid backend identifier"
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_abc123"
+
+    Unauthorized:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: UNAUTHORIZED
+            message: Authentication required
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_def456"
+
+    Forbidden:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: FORBIDDEN
+            message: Insufficient permissions for this operation
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_ghi789"
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: NOT_FOUND
+            message: Resource not found
+            details:
+              resource_type: "quantum_circuit"
+              resource_id: "circ_123456"
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_jkl012"
+
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: CONFLICT
+            message: Resource already exists
+            details:
+              resource_type: "neuromorphic_network"
+              resource_id: "net_123456"
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_mno345"
+
+    TooManyRequests:
+      description: Rate limit exceeded
+      headers:
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: TOO_MANY_REQUESTS
+            message: Rate limit exceeded
+            details:
+              limit: 1000
+              reset_in: 60
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_pqr678"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: INTERNAL_SERVER_ERROR
+            message: An unexpected error occurred
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_stu901"
+
+    ServiceUnavailable:
+      description: Service temporarily unavailable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: SERVICE_UNAVAILABLE
+            message: Service is temporarily unavailable
+            details:
+              reason: "maintenance"
+              estimated_recovery: "2026-01-05T11:00:00Z"
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_vwx234"
+
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            code: VALIDATION_ERROR
+            message: Request validation failed
+            details:
+              errors:
+                - field: "qasm"
+                  error: "Invalid QASM syntax"
+                - field: "num_qubits"
+                  error: "Must be between 1 and 40"
+            timestamp:
+              nanoseconds: 1704470400000000000
+              iso8601: "2026-01-05T10:30:00Z"
+            request_id: "req_yza567"
+
+x-metadata:
+  api-version: 1.0.0
+  generated: "2026-01-05T10:30:00Z"
+  documentation: "https://docs.quenne.institute.jp/api"
+  support: "api-support@quenne.institute.jp"
+  changelog: "https://docs.quenne.institute.jp/api/changelog"
+
+externalDocs:
+  description: QUENNE API Documentation
+  url: https://docs.quenne.institute.jp/api
+```
+
+ADDITIONAL FILES FOR COMPLETE OPENAPI SPECIFICATION
+
+1. OpenAPI Configuration (openapi-config.yaml)
+
+```yaml
+# openapi-config.yaml
+generate:
+  - typescript-axios
+  - python
+  - go
+  - java
+  - csharp
+
+output:
+  typescript-axios: ./clients/typescript
+  python: ./clients/python
+  go: ./clients/go
+  java: ./clients/java
+  csharp: ./clients/csharp
+
+options:
+  typescript-axios:
+    withSeparateModelsAndApi: true
+    apiPackage: api
+    modelPackage: models
+    supportsES6: true
+  python:
+    packageName: quenne_client
+    projectName: quenne-python-client
+  go:
+    packageName: quenne
+    withGoCodegenComment: true
+  java:
+    library: okhttp-gson
+    artifactId: quenne-java-client
+    invokerPackage: com.quenne.client
+    apiPackage: com.quenne.client.api
+    modelPackage: com.quenne.client.model
+  csharp:
+    packageName: Quenne.Client
+    targetFramework: net6.0
+
+validation:
+  schema: true
+  spec: true
+```
+
+2. Package.json for Node.js Generation
+
+```json
+{
+  "name": "quenne-openapi-generator",
+  "version": "1.0.0",
+  "scripts": {
+    "generate": "openapi-generator-cli generate -c openapi-config.yaml -i quenne-openapi.yaml",
+    "validate": "openapi-generator-cli validate -i quenne-openapi.yaml",
+    "bundle": "openapi-bundler -o bundled-openapi.yaml quenne-openapi.yaml",
+    "serve-docs": "redocly serve-docs quenne-openapi.yaml",
+    "test-client": "npm test --prefix clients/typescript"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.7.0",
+    "@redocly/cli": "^1.0.0",
+    "openapi-bundler": "^1.0.0"
+  }
+}
+```
+
+3. Dockerfile for API Server Generation
+
+```dockerfile
+# Dockerfile for QUENNE API Server
+FROM node:18-alpine AS generator
+
+WORKDIR /app
+
+# Install OpenAPI Generator
+RUN npm install -g @openapitools/openapi-generator-cli
+
+# Copy OpenAPI spec
+COPY quenne-openapi.yaml .
+COPY openapi-config.yaml .
+
+# Generate server stubs
+RUN openapi-generator-cli generate \
+  -g nodejs-express-server \
+  -i quenne-openapi.yaml \
+  -o /server
+
+FROM node:18-alpine AS runtime
+
+WORKDIR /app
+
+# Copy generated server
+COPY --from=generator /server .
+
+# Install dependencies
+RUN npm install
+
+# Create necessary directories
+RUN mkdir -p logs uploads
+
+# Environment variables
+ENV NODE_ENV=production
+ENV PORT=8080
+ENV LOG_LEVEL=info
+
+# Expose port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+
+# Start server
+CMD ["npm", "start"]
+```
+
+4. Makefile for OpenAPI Management
+
+```makefile
+# Makefile for QUENNE OpenAPI Specification
+
+.PHONY: all generate validate bundle docs serve test clean
+
+# Default target
+all: generate validate
+
+# Generate clients and servers
+generate:
+	@echo "Generating clients and servers..."
+	openapi-generator-cli generate -c openapi-config.yaml -i quenne-openapi.yaml
+	@echo "✅ Generation complete"
+
+# Validate OpenAPI spec
+validate:
+	@echo "Validating OpenAPI specification..."
+	openapi-generator-cli validate -i quenne-openapi.yaml
+	@echo "✅ Validation passed"
+
+# Bundle OpenAPI spec
+bundle:
+	@echo "Bundling OpenAPI specification..."
+	openapi-bundler -o bundled/quenne-openapi-bundled.yaml quenne-openapi.yaml
+	@echo "✅ Bundling complete"
+
+# Generate documentation
+docs:
+	@echo "Generating API documentation..."
+	redocly build-docs quenne-openapi.yaml -o docs/index.html
+	@echo "✅ Documentation generated"
+
+# Serve documentation locally
+serve:
+	@echo "Serving API documentation on http://localhost:8081"
+	redocly serve-docs quenne-openapi.yaml
+
+# Test generated clients
+test:
+	@echo "Testing generated clients..."
+	cd clients/typescript && npm test
+	cd clients/python && python -m pytest tests/
+	@echo "✅ Tests passed"
+
+# Clean generated files
+clean:
+	@echo "Cleaning generated files..."
+	rm -rf clients server bundled docs
+	@echo "✅ Clean complete"
+
+# Deploy API spec to registry
+deploy:
+	@echo "Deploying API spec to registry..."
+	curl -X POST https://api.swaggerhub.com/apis/QUENNE/quenne-api/1.0.0 \
+		-H "Authorization: Bearer ${SWAGGERHUB_TOKEN}" \
+		-H "Content-Type: application/yaml" \
+		--data-binary @quenne-openapi.yaml
+	@echo "✅ Deployed to SwaggerHub"
+
+# Update version
+version:
+	@read -p "Enter new version (e.g., 1.1.0): " version; \
+	sed -i '' "s/version: 1.0.0/version: $$version/" quenne-openapi.yaml; \
+	sed -i '' "s/version: \"1.0.0\"/version: \"$$version\"/" openapi-config.yaml; \
+	echo "✅ Updated to version $$version"
+
+help:
+	@echo "Available targets:"
+	@echo "  make generate   - Generate clients and servers"
+	@echo "  make validate   - Validate OpenAPI spec"
+	@echo "  make bundle     - Bundle OpenAPI spec"
+	@echo "  make docs       - Generate documentation"
+	@echo "  make serve      - Serve documentation locally"
+	@echo "  make test       - Test generated clients"
+	@echo "  make clean      - Clean generated files"
+	@echo "  make deploy     - Deploy to SwaggerHub"
+	@echo "  make version    - Update version"
+```
+
+5. GitHub Actions Workflow for CI/CD
+
+```yaml
+# .github/workflows/openapi-ci.yml
+name: OpenAPI CI/CD
+
+on:
+  push:
+    paths:
+      - 'quenne-openapi.yaml'
+      - 'openapi-config.yaml'
+  pull_request:
+    paths:
+      - 'quenne-openapi.yaml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - name: Validate OpenAPI spec
+        run: npm run validate
+      - name: Lint OpenAPI spec
+        run: npx @redocly/cli lint quenne-openapi.yaml
+
+  generate:
+    runs-on: ubuntu-latest
+    needs: validate
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+      - run: npm ci
+      - name: Generate clients
+        run: npm run generate
+      - name: Run tests
+        run: npm run test
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: generated-clients
+          path: clients/
+          retention-days: 7
+
+  deploy-docs:
+    runs-on: ubuntu-latest
+    needs: generate
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      - run: npm ci
+      - name: Generate documentation
+        run: npm run docs
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
+          destination_dir: ./api-docs
+```
+
+NEXT STEPS AFTER OPENAPI SPECIFICATION
+
+With the complete OpenAPI specification ready, here are the immediate next steps:
+
+1. Generate Client SDKs
+
+```bash
+# Install OpenAPI Generator
+npm install -g @openapitools/openapi-generator-cli
+
+# Generate all clients
+openapi-generator-cli generate \
+  -c openapi-config.yaml \
+  -i quenne-openapi.yaml
+```
+
+2. Generate Server Stubs
+
+```bash
+# Generate Express.js server
+openapi-generator-cli generate \
+  -g nodejs-express-server \
+  -i quenne-openapi.yaml \
+  -o server/
+
+# Generate FastAPI server
+openapi-generator-cli generate \
+  -g python-fastapi \
+  -i quenne-openapi.yaml \
+  -o server-fastapi/
+```
+
+3. Validate and Test
+
+```bash
+# Validate the spec
+openapi-generator-cli validate -i quenne-openapi.yaml
+
+# Generate test cases
+openapi-generator-cli generate \
+  -g jest \
+  -i quenne-openapi.yaml \
+  -o tests/
+```
+
+4. Publish Documentation
+
+```bash
+# Generate HTML documentation
+npx redocly build-docs quenne-openapi.yaml -o docs/index.html
+
+# Or use Swagger UI
+npx swagger-ui-dist
+```
+
+5. Integrate with API Gateway
+
+```yaml
+# Example Kong configuration
+_format_version: "2.1"
+_transform: true
+
+services:
+  - name: quenne-api
+    url: http://api.quenne.institute.jp
+    routes:
+      - name: quenne-routes
+        paths: ["/api/v1"]
+    plugins:
+      - name: jwt
+      - name: rate-limiting
+        config:
+          minute: 1000
+      - name: cors
+      - name: request-transformer
+        config:
+          add:
+            headers:
+              - "X-API-Version: 1.0"
+```
+
