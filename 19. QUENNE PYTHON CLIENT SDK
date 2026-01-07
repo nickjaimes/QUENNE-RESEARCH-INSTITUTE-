@@ -1,0 +1,3603 @@
+QUENNE PYTHON CLIENT SDK
+
+Complete Python Client Implementation
+
+---
+
+1. PROJECT STRUCTURE
+
+```
+quenne-python-client/
+├── README.md
+├── setup.py
+├── requirements.txt
+├── setup.cfg
+├── pyproject.toml
+├── LICENSE
+├── .gitignore
+├── .pre-commit-config.yaml
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml
+│   │   └── publish.yml
+├── docs/
+│   ├── index.md
+│   ├── quickstart.md
+│   └── api-reference.md
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_client.py
+│   ├── test_quantum.py
+│   └── test_integration.py
+├── examples/
+│   ├── basic_usage.py
+│   ├── quantum_example.py
+│   ├── neuromorphic_example.py
+│   └── edge_example.py
+└── quenne/
+    ├── __init__.py
+    ├── client.py
+    ├── config.py
+    ├── exceptions.py
+    ├── models/
+    │   ├── __init__.py
+    │   ├── common.py
+    │   ├── quantum.py
+    │   ├── neuromorphic.py
+    │   ├── edge.py
+    │   ├── homeostasis.py
+    │   └── integration.py
+    ├── api/
+    │   ├── __init__.py
+    │   ├── base.py
+    │   ├── quantum.py
+    │   ├── neuromorphic.py
+    │   ├── edge.py
+    │   ├── homeostasis.py
+    │   ├── integration.py
+    │   └── monitoring.py
+    ├── utils/
+    │   ├── __init__.py
+    │   ├── validation.py
+    │   ├── serialization.py
+    │   ├── logging.py
+    │   └── async_utils.py
+    └── types/
+        ├── __init__.py
+        ├── enums.py
+        └── constants.py
+```
+
+---
+
+2. CORE FILES
+
+2.1 setup.py
+
+```python
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+"""Setup script for QUENNE Python Client SDK."""
+
+import io
+import os
+from setuptools import setup, find_packages
+
+# Package metadata
+NAME = "quenne-client"
+DESCRIPTION = "Python client SDK for QUENNE Quantum-Edge-Neuromorphic Engine"
+URL = "https://github.com/QUENNE-Institute/quenne-python-client"
+EMAIL = "api@quenne.institute.jp"
+AUTHOR = "QUENNE Research Institute"
+REQUIRES_PYTHON = ">=3.10.0"
+VERSION = "1.0.0"
+
+# What packages are required for this module to be executed?
+REQUIRED = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.5.0",
+    "python-dateutil>=2.8.2",
+    "numpy>=1.24.0",
+    "aiofiles>=23.0.0",
+    "websockets>=12.0",
+    "aiohttp>=3.9.0",
+    "rich>=13.5.0",
+    "tenacity>=8.2.0",
+    "cachetools>=5.3.0",
+    "cryptography>=41.0.0",
+]
+
+# Optional dependencies
+EXTRAS = {
+    "quantum": [
+        "qiskit>=1.0.0",
+        "pennylane>=0.32.0",
+        "qutip>=4.7.0",
+    ],
+    "neuromorphic": [
+        "nest-simulator>=3.4.0",
+        "brian2>=2.5.0",
+        "snntorch>=0.6.0",
+    ],
+    "edge": [
+        "roslibpy>=1.4.0",
+        "opencv-python>=4.8.0",
+        "pyrealsense2>=2.54.0",
+    ],
+    "dev": [
+        "pytest>=7.4.0",
+        "pytest-asyncio>=0.21.0",
+        "pytest-cov>=4.1.0",
+        "black>=23.0.0",
+        "isort>=5.12.0",
+        "flake8>=6.0.0",
+        "mypy>=1.5.0",
+        "pre-commit>=3.4.0",
+        "sphinx>=7.2.0",
+        "sphinx-rtd-theme>=1.3.0",
+    ],
+    "docs": [
+        "sphinx>=7.2.0",
+        "sphinx-rtd-theme>=1.3.0",
+        "sphinx-autodoc-typehints>=1.24.0",
+    ],
+}
+
+# Read the README.md file
+with io.open("README.md", encoding="utf-8") as f:
+    long_description = "\n" + f.read()
+
+setup(
+    name=NAME,
+    version=VERSION,
+    description=DESCRIPTION,
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    author=AUTHOR,
+    author_email=EMAIL,
+    python_requires=REQUIRES_PYTHON,
+    url=URL,
+    packages=find_packages(exclude=["tests", "*.tests", "*.tests.*", "tests.*"]),
+    install_requires=REQUIRED,
+    extras_require=EXTRAS,
+    include_package_data=True,
+    license="Apache 2.0",
+    classifiers=[
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Natural Language :: English",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Topic :: Scientific/Engineering",
+        "Topic :: Scientific/Engineering :: Artificial Intelligence",
+        "Topic :: Scientific/Engineering :: Quantum Computing",
+        "Topic :: Software Development :: Libraries :: Python Modules",
+    ],
+    keywords=[
+        "quantum",
+        "neuromorphic",
+        "edge-computing",
+        "artificial-intelligence",
+        "cognitive-computing",
+        "quenne",
+    ],
+    project_urls={
+        "Documentation": "https://quenne.institute.jp/docs/python",
+        "Source": URL,
+        "Tracker": f"{URL}/issues",
+    },
+)
+```
+
+2.2 pyproject.toml
+
+```toml
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "quenne-client"
+version = "1.0.0"
+description = "Python client SDK for QUENNE Quantum-Edge-Neuromorphic Engine"
+readme = "README.md"
+authors = [
+    {name = "QUENNE Research Institute", email = "api@quenne.institute.jp"}
+]
+license = {text = "Apache-2.0"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "httpx>=0.24.0",
+    "pydantic>=2.0.0",
+    "typing-extensions>=4.5.0",
+    "python-dateutil>=2.8.2",
+    "numpy>=1.24.0",
+    "aiofiles>=23.0.0",
+    "websockets>=12.0",
+    "aiohttp>=3.9.0",
+    "rich>=13.5.0",
+    "tenacity>=8.2.0",
+    "cachetools>=5.3.0",
+    "cryptography>=41.0.0",
+]
+
+[project.optional-dependencies]
+quantum = ["qiskit>=1.0.0", "pennylane>=0.32.0", "qutip>=4.7.0"]
+neuromorphic = ["nest-simulator>=3.4.0", "brian2>=2.5.0", "snntorch>=0.6.0"]
+edge = ["roslibpy>=1.4.0", "opencv-python>=4.8.0", "pyrealsense2>=2.54.0"]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "flake8>=6.0.0",
+    "mypy>=1.5.0",
+    "pre-commit>=3.4.0",
+    "sphinx>=7.2.0",
+    "sphinx-rtd-theme>=1.3.0",
+]
+docs = [
+    "sphinx>=7.2.0",
+    "sphinx-rtd-theme>=1.3.0",
+    "sphinx-autodoc-typehints>=1.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/QUENNE-Institute/quenne-python-client"
+Documentation = "https://quenne.institute.jp/docs/python"
+Repository = "https://github.com/QUENNE-Institute/quenne-python-client"
+Changelog = "https://github.com/QUENNE-Institute/quenne-python-client/releases"
+
+[tool.black]
+line-length = 88
+target-version = ['py310']
+include = '\.pyi?$'
+extend-exclude = '''
+/(
+  \.eggs
+  | \.git
+  | \.hg
+  | \.mypy_cache
+  | \.tox
+  | \.venv
+  | _build
+  | buck-out
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = [
+    "tests.*",
+    "examples.*"
+]
+disallow_untyped_defs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+    "--cov=quenne",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--asyncio-mode=auto",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "quantum: requires quantum backend",
+    "neuromorphic: requires neuromorphic backend",
+    "edge: requires edge simulation",
+]
+```
+
+2.3 README.md
+
+```markdown
+# QUENNE Python Client SDK
+
+[![PyPI version](https://badge.fury.io/py/quenne-client.svg)](https://pypi.org/project/quenne-client/)
+[![Python Version](https://img.shields.io/pypi/pyversions/quenne-client.svg)](https://pypi.org/project/quenne-client/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Documentation](https://img.shields.io/badge/docs-latest-brightgreen.svg)](https://quenne.institute.jp/docs/python)
+[![Tests](https://github.com/QUENNE-Institute/quenne-python-client/actions/workflows/ci.yml/badge.svg)](https://github.com/QUENNE-Institute/quenne-python-client/actions)
+[![Coverage](https://img.shields.io/codecov/c/github/QUENNE-Institute/quenne-python-client)](https://codecov.io/gh/QUENNE-Institute/quenne-python-client)
+
+Python client SDK for the QUENNE (Quantum-Edge-Neuromorphic Engine) Research Institute API. This library provides a comprehensive interface to interact with all layers of the QUENNE cognitive architecture.
+
+## Features
+
+- **Full API Coverage**: Complete implementation of all QUENNE API endpoints
+- **Async/await Support**: Built with async-first design for high performance
+- **Type Hints**: Full type annotations for better IDE support
+- **Pydantic Models**: Strongly typed request/response models
+- **Automatic Retries**: Configurable retry logic with exponential backoff
+- **WebSocket Support**: Real-time event streaming
+- **Comprehensive Documentation**: Extensive examples and API reference
+
+## Installation
+
+```bash
+# Basic installation
+pip install quenne-client
+
+# With quantum computing extensions
+pip install quenne-client[quantum]
+
+# With neuromorphic computing extensions
+pip install quenne-client[neuromorphic]
+
+# With edge computing extensions
+pip install quenne-client[edge]
+
+# For development
+pip install quenne-client[dev]
+```
+
+Quick Start
+
+Basic Authentication
+
+```python
+import asyncio
+from quenne import QuenneClient
+
+async def main():
+    # Initialize client with authentication
+    client = QuenneClient(
+        base_url="https://api.quenne.institute.jp/api/v1",
+        api_key="your_api_key_here",
+        # or use token authentication:
+        # token="your_jwt_token_here",
+    )
+    
+    # Check system health
+    health = await client.homeostasis.get_health()
+    print(f"System health: {health.overall_health}")
+    
+    # List quantum backends
+    backends = await client.quantum.list_backends()
+    for backend in backends:
+        print(f"Backend: {backend.name} ({backend.status})")
+
+asyncio.run(main())
+```
+
+Quantum Computing Example
+
+```python
+import asyncio
+import numpy as np
+from quenne import QuenneClient
+from quenne.models.quantum import QuantumCircuitCreate
+
+async def quantum_example():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # Create a quantum circuit
+    circuit = QuantumCircuitCreate(
+        name="bell_state_circuit",
+        qasm="""
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+        """,
+        parameters={
+            "num_qubits": 2,
+            "depth": 2,
+            "optimization_level": 3
+        }
+    )
+    
+    # Submit circuit
+    created = await client.quantum.create_circuit(circuit)
+    print(f"Circuit created: {created.circuit_id}")
+    
+    # Execute on simulator
+    job = await client.quantum.execute_circuit(
+        circuit_id=created.circuit_id,
+        backend_id="simulator_40q",
+        shots=1024
+    )
+    
+    # Wait for completion
+    result = await client.quantum.wait_for_job(job.job_id)
+    print(f"Results: {result.results.counts}")
+
+asyncio.run(quantum_example())
+```
+
+Neuromorphic Computing Example
+
+```python
+import asyncio
+from quenne import QuenneClient
+from quenne.models.neuromorphic import NeuromorphicNetworkCreate
+
+async def neuromorphic_example():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # Create a spiking neural network
+    network = NeuromorphicNetworkCreate(
+        name="pattern_recognition_10k",
+        specification={
+            "num_neurons": 10000,
+            "num_synapses": 1000000,
+            "neuron_model": "adaptive_lif",
+            "connectivity": {
+                "type": "random",
+                "probability": 0.1
+            }
+        }
+    )
+    
+    # Create network
+    created = await client.neuromorphic.create_network(network)
+    print(f"Network created: {created.network_id}")
+    
+    # Train network
+    training_data = {
+        "patterns": [
+            {"input": [1, 0, 1, 0], "target": [1, 0, 0, 1]},
+            {"input": [0, 1, 0, 1], "target": [0, 1, 1, 0]},
+        ]
+    }
+    
+    training = await client.neuromorphic.train_network(
+        network_id=created.network_id,
+        training_data=training_data
+    )
+    
+    # Monitor training
+    async for update in client.neuromorphic.stream_training_updates(training.training_id):
+        print(f"Epoch {update.current_epoch}: loss={update.metrics.training_loss}")
+
+asyncio.run(neuromorphic_example())
+```
+
+Edge Computing Example
+
+```python
+import asyncio
+from quenne import QuenneClient
+from quenne.models.edge import EdgeTaskRequest
+
+async def edge_example():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # List available robots
+    devices = await client.edge.list_devices()
+    robot = next(d for d in devices if d.type == "ground_robot")
+    
+    # Create navigation task
+    task = EdgeTaskRequest(
+        task_type="navigation",
+        device_id=robot.device_id,
+        parameters={
+            "goal": {"x": 5.0, "y": 3.0, "z": 0.0},
+            "path_planning": {"algorithm": "a_star"}
+        },
+        constraints={
+            "max_time": 30,
+            "safety_requirements": {"min_obstacle_distance": 0.5}
+        }
+    )
+    
+    # Execute task
+    task_result = await client.edge.execute_task(task)
+    print(f"Task started: {task_result.task_id}")
+    
+    # Stream task updates
+    async for update in client.edge.stream_task_updates(task_result.task_id):
+        print(f"Progress: {update.progress:.1%}, Position: {update.current_position}")
+
+asyncio.run(edge_example())
+```
+
+Cross-Layer Integration Example
+
+```python
+import asyncio
+from quenne import QuenneClient
+from quenne.models.integration import IntegrationTaskRequest
+
+async def integration_example():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # Create a cross-layer cognitive task
+    task = IntegrationTaskRequest(
+        task_type="anomaly_detection",
+        description="Detect anomalies using full QUENNE stack",
+        data_source={
+            "type": "edge_sensor",
+            "device_id": "sensor_001",
+            "stream_url": "/edge/streams/sensor_001"
+        },
+        processing_pipeline=[
+            {
+                "layer": "edge",
+                "action": "preprocess_sensor_data",
+                "parameters": {"filtering": "median"}
+            },
+            {
+                "layer": "quantum",
+                "action": "quantum_feature_extraction",
+                "parameters": {"circuit": "feature_extraction_8q"}
+            },
+            {
+                "layer": "neuromorphic",
+                "action": "pattern_recognition",
+                "parameters": {"network": "anomaly_detector_10k"}
+            }
+        ],
+        constraints={
+            "max_latency": 0.1,
+            "max_energy": 0.5
+        }
+    )
+    
+    # Execute integrated task
+    result = await client.integration.execute_task(task)
+    
+    # Monitor in real-time
+    async for metric in client.monitoring.stream_metrics(
+        task_id=result.task_id,
+        metrics=["latency", "accuracy", "energy"]
+    ):
+        print(f"Metrics: {metric}")
+
+asyncio.run(integration_example())
+```
+
+Configuration
+
+Environment Variables
+
+```bash
+export QUENNE_API_KEY="your_api_key"
+export QUENNE_BASE_URL="https://api.quenne.institute.jp/api/v1"
+export QUENNE_DEBUG="true"
+export QUENNE_TIMEOUT="30"
+```
+
+Configuration File
+
+Create ~/.quenne/config.yaml:
+
+```yaml
+default:
+  api_key: "your_api_key"
+  base_url: "https://api.quenne.institute.jp/api/v1"
+  timeout: 30
+  max_retries: 3
+
+development:
+  base_url: "https://api.dev.quenne.institute.jp/api/v1"
+  debug: true
+
+production:
+  base_url: "https://api.quenne.institute.jp/api/v1"
+  timeout: 60
+```
+
+Advanced Features
+
+WebSocket Event Streaming
+
+```python
+import asyncio
+from quenne import QuenneClient
+
+async def event_streaming():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # Connect to WebSocket
+    async with client.connect_websocket() as ws:
+        # Subscribe to events
+        await ws.subscribe([
+            "quantum_job_updates",
+            "neuromorphic_spikes",
+            "edge_sensor_data",
+            "system_alerts"
+        ])
+        
+        # Stream events
+        async for event in ws.stream():
+            print(f"Event: {event.event_type} at {event.timestamp}")
+            print(f"Data: {event.data}")
+
+asyncio.run(event_streaming())
+```
+
+Error Handling and Retries
+
+```python
+import asyncio
+from quenne import QuenneClient, QuenneAPIError
+from tenacity import retry, stop_after_attempt, wait_exponential
+
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10)
+)
+async def resilient_operation():
+    client = QuenneClient(
+        api_key="your_api_key",
+        max_retries=5,
+        retry_delay=1.0
+    )
+    
+    try:
+        result = await client.quantum.execute_circuit(
+            circuit_id="circ_123",
+            backend_id="ibmq_quito",
+            shots=1024
+        )
+        return result
+    except QuenneAPIError as e:
+        if e.status_code == 503:
+            print("Service temporarily unavailable, retrying...")
+            raise
+        else:
+            raise
+
+asyncio.run(resilient_operation())
+```
+
+Batch Operations
+
+```python
+import asyncio
+from quenne import QuenneClient
+import asyncio
+
+async def batch_operations():
+    client = QuenneClient(api_key="your_api_key")
+    
+    # Batch circuit execution
+    circuits = [
+        {"name": f"circuit_{i}", "qasm": f"OPENQASM 2.0; qreg q[2]; h q[0];"}
+        for i in range(10)
+    ]
+    
+    # Execute in parallel
+    tasks = [
+        client.quantum.create_circuit(circuit)
+        for circuit in circuits
+    ]
+    
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    for i, result in enumerate(results):
+        if isinstance(result, Exception):
+            print(f"Circuit {i} failed: {result}")
+        else:
+            print(f"Circuit {i} created: {result.circuit_id}")
+
+asyncio.run(batch_operations())
+```
+
+Documentation
+
+· Full API Reference
+· Examples Gallery
+· Migration Guide
+
+Development
+
+```bash
+# Clone repository
+git clone https://github.com/QUENNE-Institute/quenne-python-client.git
+cd quenne-python-client
+
+# Install development dependencies
+pip install -e .[dev]
+
+# Run tests
+pytest
+
+# Run with coverage
+pytest --cov=quenne --cov-report=html
+
+# Type checking
+mypy quenne
+
+# Format code
+black quenne tests examples
+isort quenne tests examples
+
+# Linting
+flake8 quenne tests examples
+
+# Build documentation
+cd docs
+make html
+```
+
+Contributing
+
+We welcome contributions! Please see CONTRIBUTING.md for details.
+
+License
+
+This project is licensed under the Apache License 2.0 - see the LICENSE file for details.
+
+Support
+
+· Documentation: https://quenne.institute.jp/docs/python
+· Issues: https://github.com/QUENNE-Institute/quenne-python-client/issues
+· Email: api-support@quenne.institute.jp
+· Discord: https://discord.gg/quenne
+
+Citation
+
+If you use QUENNE in your research, please cite:
+
+```bibtex
+@software{quenne_python_client_2026,
+  title = {QUENNE Python Client SDK},
+  author = {{QUENNE Research Institute}},
+  year = {2026},
+  publisher = {GitHub},
+  url = {https://github.com/QUENNE-Institute/quenne-python-client}
+}
+```
+
+```
+
+### **2.4 Core Client: `quenne/client.py`**
+```python
+"""Main QUENNE client implementation."""
+
+import asyncio
+import logging
+import ssl
+from typing import Any, Dict, List, Optional, Union, AsyncIterator
+from pathlib import Path
+from datetime import datetime
+
+import httpx
+import yaml
+from pydantic import BaseModel, Field
+from tenacity import (
+    retry,
+    stop_after_attempt,
+    wait_exponential,
+    retry_if_exception_type,
+)
+
+from .config import ClientConfig, load_config
+from .exceptions import (
+    QuenneAPIError,
+    AuthenticationError,
+    RateLimitError,
+    ValidationError,
+    ServerError,
+)
+from .models.common import Timestamp, EnergyMeasurement, LatencyMeasurement
+from .api.quantum import QuantumAPI
+from .api.neuromorphic import NeuromorphicAPI
+from .api.edge import EdgeAPI
+from .api.homeostasis import HomeostasisAPI
+from .api.integration import IntegrationAPI
+from .api.monitoring import MonitoringAPI
+from .utils.logging import setup_logging
+from .utils.validation import validate_api_response
+from .types.enums import APIEnvironment, LogLevel
+
+logger = logging.getLogger(__name__)
+
+
+class QuenneClient:
+    """Main client for interacting with the QUENNE API."""
+
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        token: Optional[str] = None,
+        base_url: Optional[str] = None,
+        environment: APIEnvironment = APIEnvironment.PRODUCTION,
+        config_path: Optional[Path] = None,
+        timeout: float = 30.0,
+        max_retries: int = 3,
+        retry_delay: float = 1.0,
+        verify_ssl: bool = True,
+        debug: bool = False,
+        **kwargs,
+    ):
+        """
+        Initialize QUENNE client.
+
+        Args:
+            api_key: API key for authentication
+            token: JWT token for authentication (alternative to api_key)
+            base_url: Base URL for API requests
+            environment: API environment (production, staging, development)
+            config_path: Path to configuration file
+            timeout: Request timeout in seconds
+            max_retries: Maximum number of retries for failed requests
+            retry_delay: Initial retry delay in seconds
+            verify_ssl: Whether to verify SSL certificates
+            debug: Enable debug mode
+            **kwargs: Additional configuration options
+        """
+        # Load configuration
+        self._config = self._load_configuration(
+            api_key=api_key,
+            token=token,
+            base_url=base_url,
+            environment=environment,
+            config_path=config_path,
+            **kwargs,
+        )
+
+        # Setup logging
+        log_level = LogLevel.DEBUG if debug else self._config.log_level
+        setup_logging(level=log_level)
+
+        # HTTP client configuration
+        self.timeout = timeout or self._config.timeout
+        self.max_retries = max_retries or self._config.max_retries
+        self.retry_delay = retry_delay or self._config.retry_delay
+        self.verify_ssl = verify_ssl
+
+        # Initialize HTTP client
+        self._client: Optional[httpx.AsyncClient] = None
+        self._client_lock = asyncio.Lock()
+
+        # Initialize API modules
+        self.quantum = QuantumAPI(self)
+        self.neuromorphic = NeuromorphicAPI(self)
+        self.edge = EdgeAPI(self)
+        self.homeostasis = HomeostasisAPI(self)
+        self.integration = IntegrationAPI(self)
+        self.monitoring = MonitoringAPI(self)
+
+        # Cache for rate limits and tokens
+        self._rate_limit_cache: Dict[str, Any] = {}
+        self._token_cache: Optional[str] = None
+        self._token_expiry: Optional[datetime] = None
+
+        logger.info(
+            f"QUENNE client initialized for environment: {environment.value}"
+        )
+
+    def _load_configuration(
+        self,
+        api_key: Optional[str] = None,
+        token: Optional[str] = None,
+        base_url: Optional[str] = None,
+        environment: APIEnvironment = APIEnvironment.PRODUCTION,
+        config_path: Optional[Path] = None,
+        **kwargs,
+    ) -> ClientConfig:
+        """Load and merge configuration from multiple sources."""
+        # Load from config file if provided
+        file_config = load_config(config_path, environment) if config_path else None
+
+        # Environment variables
+        env_config = {
+            "api_key": api_key,
+            "token": token,
+            "base_url": base_url,
+            "environment": environment,
+        }
+
+        # Merge configurations (kwargs > env > file > defaults)
+        merged_config = {}
+        if file_config:
+            merged_config.update(file_config.dict())
+        merged_config.update({k: v for k, v in env_config.items() if v is not None})
+        merged_config.update(kwargs)
+
+        return ClientConfig(**merged_config)
+
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
+
+    async def connect(self):
+        """Establish connection to QUENNE API."""
+        if self._client is not None:
+            return
+
+        async with self._client_lock:
+            if self._client is not None:
+                return
+
+            # Configure SSL context
+            ssl_context = None
+            if self.verify_ssl:
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = True
+                ssl_context.verify_mode = ssl.CERT_REQUIRED
+
+            # Create HTTP client
+            headers = self._build_headers()
+            limits = httpx.Limits(
+                max_keepalive_connections=5,
+                max_connections=10,
+                keepalive_expiry=30.0,
+            )
+
+            self._client = httpx.AsyncClient(
+                base_url=self._config.base_url,
+                headers=headers,
+                timeout=self.timeout,
+                limits=limits,
+                verify=ssl_context,
+                follow_redirects=True,
+            )
+
+            # Test connection
+            try:
+                await self._test_connection()
+            except Exception as e:
+                await self.close()
+                raise ConnectionError(f"Failed to connect to QUENNE API: {e}")
+
+            logger.info("Successfully connected to QUENNE API")
+
+    async def close(self):
+        """Close the client connection."""
+        if self._client is not None:
+            async with self._client_lock:
+                if self._client is not None:
+                    await self._client.aclose()
+                    self._client = None
+                    logger.info("QUENNE client connection closed")
+
+    def _build_headers(self) -> Dict[str, str]:
+        """Build default headers for API requests."""
+        headers = {
+            "User-Agent": f"quenne-python-client/{self._config.version}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-API-Version": "1.0",
+        }
+
+        # Add authentication
+        if self._config.token:
+            headers["Authorization"] = f"Bearer {self._config.token}"
+        elif self._config.api_key:
+            headers["X-API-Key"] = self._config.api_key
+
+        return headers
+
+    async def _test_connection(self):
+        """Test API connection."""
+        try:
+            response = await self._client.get("/health")
+            response.raise_for_status()
+            data = response.json()
+            if data.get("status") != "healthy":
+                raise ConnectionError(f"API health check failed: {data}")
+        except httpx.HTTPError as e:
+            raise ConnectionError(f"API connection test failed: {e}")
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(
+            (httpx.TimeoutException, httpx.NetworkError, ServerError)
+        ),
+    )
+    async def request(
+        self,
+        method: str,
+        endpoint: str,
+        params: Optional[Dict[str, Any]] = None,
+        data: Optional[Union[Dict[str, Any], BaseModel]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        stream: bool = False,
+        **kwargs,
+    ) -> Union[httpx.Response, AsyncIterator[bytes]]:
+        """
+        Make an authenticated request to the QUENNE API.
+
+        Args:
+            method: HTTP method (GET, POST, PUT, DELETE, etc.)
+            endpoint: API endpoint path
+            params: Query parameters
+            data: Request body data
+            headers: Additional headers
+            stream: Whether to stream the response
+            **kwargs: Additional arguments for httpx request
+
+        Returns:
+            HTTP response or response stream
+
+        Raises:
+            QuenneAPIError: For API errors
+            AuthenticationError: For authentication failures
+            RateLimitError: For rate limit violations
+            ValidationError: For validation errors
+            ServerError: For server errors
+        """
+        # Ensure client is connected
+        if self._client is None:
+            await self.connect()
+
+        # Prepare request
+        url = endpoint
+        request_headers = self._build_headers()
+        if headers:
+            request_headers.update(headers)
+
+        # Convert Pydantic models to dict
+        if isinstance(data, BaseModel):
+            data = data.dict(exclude_unset=True, exclude_none=True)
+
+        # Add request ID
+        import uuid
+        request_headers["X-Request-ID"] = str(uuid.uuid4())
+
+        logger.debug(
+            f"Making {method} request to {url} "
+            f"with params: {params}, data: {data}"
+        )
+
+        try:
+            # Make request
+            response = await self._client.request(
+                method=method,
+                url=url,
+                params=params,
+                json=data,
+                headers=request_headers,
+                **kwargs,
+            )
+
+            # Handle streaming response
+            if stream:
+                return response.aiter_bytes()
+
+            # Parse and validate response
+            await self._handle_response(response)
+
+            return response
+
+        except httpx.HTTPStatusError as e:
+            await self._handle_http_error(e)
+        except httpx.TimeoutException as e:
+            logger.error(f"Request timeout: {e}")
+            raise ServerError(
+                message="Request timeout",
+                status_code=504,
+                details={"timeout": self.timeout},
+            ) from e
+        except httpx.NetworkError as e:
+            logger.error(f"Network error: {e}")
+            raise ServerError(
+                message="Network error",
+                status_code=503,
+                details={"error": str(e)},
+            ) from e
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            raise QuenneAPIError(
+                message="Unexpected error",
+                status_code=500,
+                details={"error": str(e)},
+            ) from e
+
+    async def _handle_response(self, response: httpx.Response):
+        """Handle and validate API response."""
+        # Update rate limit cache
+        self._update_rate_limits(response)
+
+        # Parse response
+        if response.status_code == 204:
+            return None
+
+        try:
+            data = response.json()
+        except ValueError as e:
+            raise ValidationError(
+                message="Invalid JSON response",
+                status_code=response.status_code,
+                details={"response_text": response.text},
+            ) from e
+
+        # Validate response structure
+        validate_api_response(data)
+
+        # Extract data from standard response format
+        if isinstance(data, dict) and "data" in data:
+            return data["data"]
+        return data
+
+    async def _handle_http_error(self, error: httpx.HTTPStatusError):
+        """Handle HTTP error responses."""
+        status_code = error.response.status_code
+        response_data = None
+
+        try:
+            response_data = error.response.json()
+        except ValueError:
+            response_data = {"message": error.response.text}
+
+        error_message = response_data.get("error", {}).get(
+            "message", f"HTTP {status_code}: {error.response.reason_phrase}"
+        )
+        error_details = response_data.get("error", {}).get("details", {})
+
+        # Map status codes to specific exceptions
+        if status_code == 401:
+            raise AuthenticationError(
+                message=error_message,
+                status_code=status_code,
+                details=error_details,
+            )
+        elif status_code == 403:
+            raise AuthenticationError(
+                message="Insufficient permissions",
+                status_code=status_code,
+                details=error_details,
+            )
+        elif status_code == 429:
+            raise RateLimitError(
+                message=error_message,
+                status_code=status_code,
+                details=error_details,
+            )
+        elif status_code == 400:
+            raise ValidationError(
+                message=error_message,
+                status_code=status_code,
+                details=error_details,
+            )
+        elif 500 <= status_code < 600:
+            raise ServerError(
+                message=error_message,
+                status_code=status_code,
+                details=error_details,
+            )
+        else:
+            raise QuenneAPIError(
+                message=error_message,
+                status_code=status_code,
+                details=error_details,
+            )
+
+    def _update_rate_limits(self, response: httpx.Response):
+        """Update rate limit information from response headers."""
+        rate_limit_headers = {
+            "X-RateLimit-Limit": "limit",
+            "X-RateLimit-Remaining": "remaining",
+            "X-RateLimit-Reset": "reset",
+            "X-RateLimit-Energy": "energy_limit",
+            "X-RateLimit-Energy-Remaining": "energy_remaining",
+            "X-RateLimit-Energy-Reset": "energy_reset",
+        }
+
+        for header, key in rate_limit_headers.items():
+            if header in response.headers:
+                self._rate_limit_cache[key] = response.headers[header]
+
+    async def get_rate_limits(self) -> Dict[str, Any]:
+        """Get current rate limit status."""
+        if not self._rate_limit_cache:
+            await self.request("GET", "/rate-limits")
+        return self._rate_limit_cache.copy()
+
+    async def authenticate(
+        self,
+        client_id: str,
+        client_secret: str,
+        scope: Optional[str] = None,
+    ) -> str:
+        """
+        Authenticate and obtain JWT token.
+
+        Args:
+            client_id: Client identifier
+            client_secret: Client secret
+            scope: Requested scope (space-separated)
+
+        Returns:
+            JWT access token
+        """
+        data = {
+            "grant_type": "client_credentials",
+            "client_id": client_id,
+            "client_secret": client_secret,
+        }
+        if scope:
+            data["scope"] = scope
+
+        response = await self.request("POST", "/auth/token", data=data)
+        token_data = response.json()
+
+        self._config.token = token_data["access_token"]
+        self._token_cache = token_data["access_token"]
+        self._token_expiry = datetime.utcnow().timestamp() + token_data["expires_in"]
+
+        # Update client headers
+        if self._client:
+            self._client.headers.update(
+                {"Authorization": f"Bearer {self._config.token}"}
+            )
+
+        return self._config.token
+
+    async def refresh_token(self, refresh_token: str) -> str:
+        """Refresh expired JWT token."""
+        data = {"refresh_token": refresh_token}
+        response = await self.request("POST", "/auth/token/refresh", data=data)
+        token_data = response.json()
+
+        self._config.token = token_data["access_token"]
+        self._token_cache = token_data["access_token"]
+        self._token_expiry = datetime.utcnow().timestamp() + token_data["expires_in"]
+
+        # Update client headers
+        if self._client:
+            self._client.headers.update(
+                {"Authorization": f"Bearer {self._config.token}"}
+            )
+
+        return self._config.token
+
+    async def connect_websocket(self) -> "WebSocketClient":
+        """
+        Connect to QUENNE WebSocket for real-time updates.
+
+        Returns:
+            WebSocketClient instance
+        """
+        from .websocket import WebSocketClient
+
+        ws_client = WebSocketClient(self._config)
+        await ws_client.connect()
+        return ws_client
+
+    # Convenience methods
+    async def get(self, endpoint: str, **kwargs) -> httpx.Response:
+        """Convenience method for GET requests."""
+        return await self.request("GET", endpoint, **kwargs)
+
+    async def post(self, endpoint: str, **kwargs) -> httpx.Response:
+        """Convenience method for POST requests."""
+        return await self.request("POST", endpoint, **kwargs)
+
+    async def put(self, endpoint: str, **kwargs) -> httpx.Response:
+        """Convenience method for PUT requests."""
+        return await self.request("PUT", endpoint, **kwargs)
+
+    async def delete(self, endpoint: str, **kwargs) -> httpx.Response:
+        """Convenience method for DELETE requests."""
+        return await self.request("DELETE", endpoint, **kwargs)
+
+    async def patch(self, endpoint: str, **kwargs) -> httpx.Response:
+        """Convenience method for PATCH requests."""
+        return await self.request("PATCH", endpoint, **kwargs)
+
+    # Property accessors
+    @property
+    def config(self) -> ClientConfig:
+        """Get client configuration."""
+        return self._config
+
+    @property
+    def is_connected(self) -> bool:
+        """Check if client is connected."""
+        return self._client is not None
+
+    @property
+    def base_url(self) -> str:
+        """Get base URL."""
+        return self._config.base_url
+
+
+# Synchronous wrapper for compatibility
+class SyncQuenneClient:
+    """Synchronous wrapper for QUENNE client."""
+
+    def __init__(self, *args, **kwargs):
+        """Initialize synchronous client."""
+        self._async_client = QuenneClient(*args, **kwargs)
+        self._loop = asyncio.new_event_loop()
+
+    def __enter__(self):
+        """Context manager entry."""
+        self._loop.run_until_complete(self._async_client.connect())
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit."""
+        self._loop.run_until_complete(self._async_client.close())
+        self._loop.close()
+
+    def __getattr__(self, name):
+        """Proxy attribute access to async client."""
+        attr = getattr(self._async_client, name)
+
+        if asyncio.iscoroutinefunction(attr):
+
+            def sync_wrapper(*args, **kwargs):
+                return self._loop.run_until_complete(attr(*args, **kwargs))
+
+            return sync_wrapper
+        return attr
+
+    @property
+    def quantum(self):
+        """Get quantum API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.quantum, self._loop)
+
+    @property
+    def neuromorphic(self):
+        """Get neuromorphic API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.neuromorphic, self._loop)
+
+    @property
+    def edge(self):
+        """Get edge API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.edge, self._loop)
+
+    @property
+    def homeostasis(self):
+        """Get homeostasis API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.homeostasis, self._loop)
+
+    @property
+    def integration(self):
+        """Get integration API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.integration, self._loop)
+
+    @property
+    def monitoring(self):
+        """Get monitoring API sync wrapper."""
+        return SyncAPIWrapper(self._async_client.monitoring, self._loop)
+
+
+class SyncAPIWrapper:
+    """Synchronous wrapper for API modules."""
+
+    def __init__(self, async_api, loop):
+        """Initialize wrapper."""
+        self._async_api = async_api
+        self._loop = loop
+
+    def __getattr__(self, name):
+        """Proxy attribute access to async API."""
+        attr = getattr(self._async_api, name)
+
+        if asyncio.iscoroutinefunction(attr):
+
+            def sync_wrapper(*args, **kwargs):
+                return self._loop.run_until_complete(attr(*args, **kwargs))
+
+            return sync_wrapper
+        return attr
+```
+
+2.5 Configuration: quenne/config.py
+
+```python
+"""Client configuration management."""
+
+import os
+import logging
+from pathlib import Path
+from typing import Optional, Dict, Any
+from enum import Enum
+
+import yaml
+from pydantic import BaseModel, Field, validator
+from dotenv import load_dotenv
+
+from .types.enums import APIEnvironment, LogLevel
+
+logger = logging.getLogger(__name__)
+
+# Load environment variables
+load_dotenv()
+
+
+class ClientConfig(BaseModel):
+    """QUENNE client configuration."""
+
+    # Authentication
+    api_key: Optional[str] = Field(
+        None, description="API key for authentication"
+    )
+    token: Optional[str] = Field(
+        None, description="JWT token for authentication"
+    )
+
+    # API Configuration
+    base_url: str = Field(
+        "https://api.quenne.institute.jp/api/v1",
+        description="Base URL for API requests",
+    )
+    environment: APIEnvironment = Field(
+        APIEnvironment.PRODUCTION, description="API environment"
+    )
+    version: str = Field("1.0.0", description="Client version")
+
+    # Network Configuration
+    timeout: float = Field(30.0, description="Request timeout in seconds")
+    max_retries: int = Field(3, description="Maximum retry attempts")
+    retry_delay: float = Field(1.0, description="Retry delay in seconds")
+    verify_ssl: bool = Field(True, description="Verify SSL certificates")
+
+    # Logging
+    log_level: LogLevel = Field(LogLevel.INFO, description="Logging level")
+    log_format: str = Field(
+        "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        description="Log format",
+    )
+
+    # Cache Configuration
+    cache_enabled: bool = Field(True, description="Enable caching")
+    cache_ttl: int = Field(300, description="Cache TTL in seconds")
+    cache_max_size: int = Field(1000, description="Maximum cache size")
+
+    # Performance
+    pool_connections: int = Field(10, description="Connection pool size")
+    pool_maxsize: int = Field(100, description="Maximum pool size")
+
+    # Monitoring
+    enable_metrics: bool = Field(True, description="Enable metrics collection")
+    metrics_interval: int = Field(60, description="Metrics interval in seconds")
+
+    # Quantum-specific
+    quantum_default_backend: str = Field(
+        "simulator_40q", description="Default quantum backend"
+    )
+    quantum_default_shots: int = Field(1024, description="Default shot count")
+
+    # Neuromorphic-specific
+    neuromorphic_default_network: Optional[str] = Field(
+        None, description="Default neuromorphic network"
+    )
+    neuromorphic_simulation_time: float = Field(
+        1.0, description="Default simulation time in seconds"
+    )
+
+    # Edge-specific
+    edge_default_device: Optional[str] = Field(
+        None, description="Default edge device"
+    )
+    edge_simulation_enabled: bool = Field(
+        True, description="Enable edge simulation"
+    )
+
+    class Config:
+        """Pydantic model configuration."""
+        env_prefix = "QUENNE_"
+        case_sensitive = False
+        use_enum_values = True
+
+    @validator("base_url")
+    def validate_base_url(cls, v, values):
+        """Validate and normalize base URL."""
+        if "environment" in values:
+            env = values["environment"]
+            if env == APIEnvironment.DEVELOPMENT:
+                return "http://localhost:8080/api/v1"
+            elif env == APIEnvironment.STAGING:
+                return "https://api.staging.quenne.institute.jp/api/v1"
+            elif env == APIEnvironment.PRODUCTION:
+                return "https://api.quenne.institute.jp/api/v1"
+        return v.rstrip("/")
+
+    @validator("api_key", "token", pre=True, always=True)
+    def validate_auth(cls, v, values, field):
+        """Validate authentication credentials."""
+        # Check environment variable
+        env_var = f"QUENNE_{field.name.upper()}"
+        if not v and env_var in os.environ:
+            v = os.environ[env_var]
+
+        # Ensure at least one authentication method is provided
+        if not v and field.name == "api_key" and not values.get("token"):
+            logger.warning(
+                "No authentication credentials provided. "
+                "Some endpoints may require authentication."
+            )
+
+        return v
+
+    @validator("timeout")
+    def validate_timeout(cls, v):
+        """Validate timeout value."""
+        if v < 1:
+            raise ValueError("Timeout must be at least 1 second")
+        if v > 300:
+            raise ValueError("Timeout cannot exceed 300 seconds")
+        return v
+
+    @validator("max_retries")
+    def validate_max_retries(cls, v):
+        """Validate max retries."""
+        if v < 0:
+            raise ValueError("Max retries cannot be negative")
+        if v > 10:
+            raise ValueError("Max retries cannot exceed 10")
+        return v
+
+
+def load_config(
+    config_path: Optional[Path] = None,
+    environment: APIEnvironment = APIEnvironment.PRODUCTION,
+) -> Optional[ClientConfig]:
+    """
+    Load configuration from file.
+
+    Args:
+        config_path: Path to configuration file
+        environment: Environment to load configuration for
+
+    Returns:
+        ClientConfig instance or None if no config file found
+    """
+    # Default config paths
+    default_paths = [
+        config_path,
+        Path.cwd() / "quenne-config.yaml",
+        Path.cwd() / "quenne-config.yml",
+        Path.home() / ".quenne" / "config.yaml",
+        Path.home() / ".quenne" / "config.yml",
+        Path("/etc/quenne/config.yaml"),
+    ]
+
+    config_file = None
+    for path in default_paths:
+        if path and path.exists():
+            config_file = path
+            break
+
+    if not config_file:
+        logger.debug("No configuration file found")
+        return None
+
+    logger.info(f"Loading configuration from {config_file}")
+
+    try:
+        with open(config_file, "r") as f:
+            config_data = yaml.safe_load(f)
+
+        # Get environment-specific configuration
+        env_data = config_data.get(environment.value, {})
+        if env_data:
+            logger.debug(f"Loaded {environment.value} configuration")
+
+        # Merge with default configuration
+        default_data = config_data.get("default", {})
+        merged_data = {**default_data, **env_data}
+
+        return ClientConfig(**merged_data)
+
+    except yaml.YAMLError as e:
+        logger.error(f"Failed to parse configuration file: {e}")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to load configuration: {e}")
+        return None
+
+
+def save_config(
+    config: ClientConfig,
+    config_path: Optional[Path] = None,
+    environment: Optional[str] = None,
+):
+    """
+    Save configuration to file.
+
+    Args:
+        config: Configuration to save
+        config_path: Path to configuration file
+        environment: Environment to save configuration for
+    """
+    if not config_path:
+        config_path = Path.home() / ".quenne" / "config.yaml"
+
+    # Create directory if it doesn't exist
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Load existing config if it exists
+    existing_config = {}
+    if config_path.exists():
+        try:
+            with open(config_path, "r") as f:
+                existing_config = yaml.safe_load(f) or {}
+        except yaml.YAMLError:
+            logger.warning(f"Could not read existing config file: {config_path}")
+
+    # Convert config to dict
+    config_dict = config.dict(exclude_unset=True, exclude_none=True)
+
+    # Update configuration
+    if environment:
+        if environment not in existing_config:
+            existing_config[environment] = {}
+        existing_config[environment].update(config_dict)
+    else:
+        existing_config.update(config_dict)
+
+    # Save configuration
+    try:
+        with open(config_path, "w") as f:
+            yaml.dump(existing_config, f, default_flow_style=False)
+        logger.info(f"Configuration saved to {config_path}")
+    except Exception as e:
+        logger.error(f"Failed to save configuration: {e}")
+        raise
+
+
+# Default configuration
+DEFAULT_CONFIG = ClientConfig()
+
+# Environment-specific configurations
+ENVIRONMENT_CONFIGS = {
+    APIEnvironment.DEVELOPMENT: ClientConfig(
+        base_url="http://localhost:8080/api/v1",
+        log_level=LogLevel.DEBUG,
+        verify_ssl=False,
+        timeout=60.0,
+    ),
+    APIEnvironment.STAGING: ClientConfig(
+        base_url="https://api.staging.quenne.institute.jp/api/v1",
+        log_level=LogLevel.INFO,
+        verify_ssl=True,
+        timeout=30.0,
+    ),
+    APIEnvironment.PRODUCTION: ClientConfig(
+        base_url="https://api.quenne.institute.jp/api/v1",
+        log_level=LogLevel.WARNING,
+        verify_ssl=True,
+        timeout=30.0,
+    ),
+}
+
+
+def get_default_config(environment: APIEnvironment = APIEnvironment.PRODUCTION) -> ClientConfig:
+    """
+    Get default configuration for environment.
+
+    Args:
+        environment: API environment
+
+    Returns:
+        Default configuration for environment
+    """
+    return ENVIRONMENT_CONFIGS.get(environment, DEFAULT_CONFIG).copy()
+```
+
+2.6 Models: quenne/models/quantum.py
+
+```python
+"""Quantum layer models."""
+
+from datetime import datetime
+from typing import List, Dict, Any, Optional, Union
+from enum import Enum
+
+from pydantic import BaseModel, Field, validator
+import numpy as np
+
+from .common import Timestamp, EnergyMeasurement, LatencyMeasurement
+
+
+class QuantumBackendStatus(str, Enum):
+    """Quantum backend status."""
+    AVAILABLE = "available"
+    BUSY = "busy"
+    OFFLINE = "offline"
+    MAINTENANCE = "maintenance"
+
+
+class QuantumGateType(str, Enum):
+    """Quantum gate types."""
+    H = "h"
+    X = "x"
+    Y = "y"
+    Z = "z"
+    RX = "rx"
+    RY = "ry"
+    RZ = "rz"
+    CX = "cx"
+    CZ = "cz"
+    SWAP = "swap"
+    MEASURE = "measure"
+    RESET = "reset"
+
+
+class QuantumEncodingMethod(str, Enum):
+    """Quantum state encoding methods."""
+    AMPLITUDE = "amplitude"
+    PHASE = "phase"
+    HYBRID = "hybrid"
+    BASIS_ENCODING = "basis_encoding"
+    ANGLE_ENCODING = "angle_encoding"
+
+
+class QuantumBackend(BaseModel):
+    """Quantum backend information."""
+    id: str = Field(..., description="Backend identifier")
+    name: str = Field(..., description="Backend name")
+    provider: str = Field(..., description="Provider name")
+    status: QuantumBackendStatus = Field(..., description="Backend status")
+    qubits: int = Field(..., description="Number of qubits")
+    coherence_time: Optional[float] = Field(None, description="Coherence time in microseconds")
+    gate_fidelity: Optional[float] = Field(None, description="Average gate fidelity")
+    queue_depth: int = Field(0, description="Current queue depth")
+    estimated_wait: float = Field(0.0, description="Estimated wait time in seconds")
+    capabilities: List[str] = Field(default_factory=list, description="Supported capabilities")
+    noise_model: Optional[Dict[str, Any]] = Field(None, description="Default noise model")
+    last_calibration: Optional[Timestamp] = Field(None, description="Last calibration timestamp")
+
+    class Config:
+        """Pydantic model configuration."""
+        use_enum_values = True
+
+
+class QuantumCircuitCreate(BaseModel):
+    """Create quantum circuit request."""
+    name: str = Field(..., description="Circuit name")
+    description: Optional[str] = Field(None, description="Circuit description")
+    qasm: str = Field(..., description="QASM 2.0 circuit definition")
+    parameters: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Circuit parameters"
+    )
+    metadata: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Circuit metadata"
+    )
+
+    @validator("qasm")
+    def validate_qasm(cls, v):
+        """Validate QASM syntax."""
+        if not v.strip().startswith("OPENQASM"):
+            raise ValueError("Invalid QASM: must start with OPENQASM declaration")
+        return v
+
+
+class QuantumCircuit(BaseModel):
+    """Quantum circuit information."""
+    circuit_id: str = Field(..., description="Circuit identifier")
+    name: str = Field(..., description="Circuit name")
+    hash: str = Field(..., description="SHA256 hash of circuit")
+    qubits: int = Field(..., description="Number of qubits")
+    depth: int = Field(..., description="Circuit depth")
+    gates: int = Field(..., description="Number of gates")
+    created_at: Timestamp = Field(..., description="Creation timestamp")
+    estimated_run_time: float = Field(0.0, description="Estimated run time in seconds")
+    estimated_energy: float = Field(0.0, description="Estimated energy consumption in joules")
+    parameters: Optional[Dict[str, Any]] = Field(None, description="Circuit parameters")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Circuit metadata")
+
+
+class QuantumExecutionRequest(BaseModel):
+    """Execute quantum circuit request."""
+    backend_id: str = Field(..., description="Target backend identifier")
+    shots: int = Field(1024, ge=1, le=100000, description="Number of shots")
+    optimization: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"level": 1, "noise_adaptive": False},
+        description="Optimization settings"
+    )
+    noise_model: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Noise model configuration"
+    )
+    execution_constraints: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Execution constraints"
+    )
+
+    @validator("shots")
+    def validate_shots(cls, v):
+        """Validate shot count."""
+        if v < 1:
+            raise ValueError("Shots must be at least 1")
+        return v
+
+
+class QuantumJob(BaseModel):
+    """Quantum job information."""
+    job_id: str = Field(..., description="Job identifier")
+    status: str = Field(..., description="Job status")
+    estimated_completion: Optional[Timestamp] = Field(None, description="Estimated completion time")
+    queue_position: Optional[int] = Field(None, description="Position in queue")
+    backend: str = Field(..., description="Backend identifier")
+    circuit_hash: str = Field(..., description="Circuit hash")
+    monitor_url: Optional[str] = Field(None, description="Monitor URL")
+    results: Optional[Dict[str, Any]] = Field(None, description="Job results")
+    metrics: Optional[Dict[str, Any]] = Field(None, description="Execution metrics")
+
+
+class QuantumState(BaseModel):
+    """Quantum state representation."""
+    amplitudes: List[complex] = Field(..., description="Complex amplitudes")
+    probabilities: Optional[List[float]] = Field(None, description="Measurement probabilities")
+    num_qubits: int = Field(..., description="Number of qubits")
+    encoding: QuantumEncodingMethod = Field(QuantumEncodingMethod.AMPLITUDE, description="Encoding method")
+    fidelity: Optional[float] = Field(None, description="State fidelity")
+    timestamp: Optional[Timestamp] = Field(None, description="State timestamp")
+
+    @validator("amplitudes")
+    def validate_amplitudes(cls, v):
+        """Validate quantum state amplitudes."""
+        # Check if length is power of 2
+        n = len(v)
+        if n & (n - 1) != 0:
+            raise ValueError("Number of amplitudes must be a power of 2")
+        
+        # Check normalization
+        norm = sum(abs(a) ** 2 for a in v)
+        if abs(norm - 1.0) > 1e-10:
+            raise ValueError(f"Quantum state not normalized: norm = {norm}")
+        
+        return v
+
+    @property
+    def density_matrix(self) -> np.ndarray:
+        """Compute density matrix from state vector."""
+        state_vector = np.array(self.amplitudes).reshape(-1, 1)
+        return state_vector @ state_vector.conj().T
+
+    def measure(self, basis: Optional[List[np.ndarray]] = None) -> List[int]:
+        """Simulate measurement in given basis."""
+        if basis is None:
+            # Computational basis
+            probabilities = [abs(a) ** 2 for a in self.amplitudes]
+            return np.random.choice(len(probabilities), p=probabilities)
+        else:
+            # Custom basis measurement
+            raise NotImplementedError("Custom basis measurement not implemented")
+
+
+class QuantumInferenceRequest(BaseModel):
+    """Quantum inference request."""
+    input_data: Dict[str, Any] = Field(..., description="Input data for inference")
+    inference_type: str = Field(..., description="Type of inference")
+    model: Optional[Dict[str, Any]] = Field(None, description="Inference model parameters")
+    parameters: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Inference parameters"
+    )
+
+    @validator("inference_type")
+    def validate_inference_type(cls, v):
+        """Validate inference type."""
+        valid_types = ["probabilistic_reasoning", "pattern_recognition", "optimization"]
+        if v not in valid_types:
+            raise ValueError(f"Invalid inference type. Must be one of: {valid_types}")
+        return v
+
+
+class QuantumInferenceResponse(BaseModel):
+    """Quantum inference response."""
+    inference_id: str = Field(..., description="Inference identifier")
+    result: Dict[str, Any] = Field(..., description="Inference results")
+    metrics: Dict[str, Any] = Field(..., description="Inference metrics")
+
+
+class QuantumPatternStore(BaseModel):
+    """Store pattern in quantum memory request."""
+    pattern: Dict[str, Any] = Field(..., description="Pattern to store")
+    encoding: Optional[Dict[str, Any]] = Field(
+        default_factory=lambda: {"method": "amplitude", "compression": "auto"},
+        description="Encoding settings"
+    )
+
+    @validator("pattern")
+    def validate_pattern(cls, v):
+        """Validate pattern data."""
+        if "data" not in v:
+            raise ValueError("Pattern must contain 'data' field")
+        return v
+
+
+class QuantumPattern(BaseModel):
+    """Quantum pattern information."""
+    pattern_id: str = Field(..., description="Pattern identifier")
+    stored_at: Timestamp = Field(..., description="Storage timestamp")
+    size: int = Field(..., description="Pattern size in qubits")
+    encoding: str = Field(..., description="Encoding method")
+    compression_ratio: Optional[float] = Field(None, description="Compression ratio")
+    estimated_retrieval_time: float = Field(0.0, description="Estimated retrieval time in seconds")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="Pattern metadata")
+
+
+class QuantumPatternRecall(BaseModel):
+    """Recall pattern from quantum memory request."""
+    partial_pattern: List[Optional[float]] = Field(
+        ...,
+        description="Partial pattern with null values for unknown elements"
+    )
+    constraints: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Recall constraints"
+    )
+    options: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Recall options"
+    )
+
+    @validator("partial_pattern")
+    def validate_partial_pattern(cls, v):
+        """Validate partial pattern."""
+        if len(v) == 0:
+            raise ValueError("Partial pattern cannot be empty")
+        
+        # Check that at least one element is not null
+        if all(x is None for x in v):
+            raise ValueError("Partial pattern must contain at least one known element")
+        
+        return v
+
+
+class QuantumPatternRecallResponse(BaseModel):
+    """Quantum pattern recall response."""
+    recalled_patterns: List[QuantumPattern] = Field(..., description="Recalled patterns")
+    recall_time: float = Field(..., description="Recall time in seconds")
+    energy_per_pattern: float = Field(..., description="Energy consumption per pattern in joules")
+    metrics: Optional[Dict[str, Any]] = Field(None, description="Recall metrics")
+
+
+# Response models for collections
+class QuantumBackendsResponse(BaseModel):
+    """Response for list of quantum backends."""
+    data: List[QuantumBackend] = Field(..., description="List of quantum backends")
+    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+
+
+class QuantumCircuitsResponse(BaseModel):
+    """Response for list of quantum circuits."""
+    data: List[QuantumCircuit] = Field(..., description="List of quantum circuits")
+    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+
+
+class QuantumJobsResponse(BaseModel):
+    """Response for list of quantum jobs."""
+    data: List[QuantumJob] = Field(..., description="List of quantum jobs")
+    meta: Optional[Dict[str, Any]] = Field(None, description="Response metadata")
+```
+
+2.7 API Implementation: quenne/api/quantum.py
+
+```python
+"""Quantum layer API implementation."""
+
+import asyncio
+import logging
+from typing import List, Dict, Any, Optional, AsyncIterator
+from datetime import datetime
+
+from ..client import QuenneClient
+from ..models.quantum import (
+    QuantumBackend,
+    QuantumCircuitCreate,
+    QuantumCircuit,
+    QuantumExecutionRequest,
+    QuantumJob,
+    QuantumInferenceRequest,
+    QuantumInferenceResponse,
+    QuantumPatternStore,
+    QuantumPattern,
+    QuantumPatternRecall,
+    QuantumPatternRecallResponse,
+    QuantumBackendsResponse,
+    QuantumCircuitsResponse,
+    QuantumJobsResponse,
+)
+from ..exceptions import QuenneAPIError
+from ..utils.async_utils import async_retry
+
+logger = logging.getLogger(__name__)
+
+
+class QuantumAPI:
+    """Quantum layer API client."""
+
+    def __init__(self, client: QuenneClient):
+        """Initialize Quantum API client."""
+        self._client = client
+        self._circuit_cache: Dict[str, QuantumCircuit] = {}
+        self._backend_cache: Dict[str, QuantumBackend] = {}
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def list_backends(
+        self,
+        include_metrics: bool = False,
+        refresh_cache: bool = False,
+    ) -> List[QuantumBackend]:
+        """
+        List available quantum backends.
+
+        Args:
+            include_metrics: Include detailed metrics in response
+            refresh_cache: Force refresh of cached backends
+
+        Returns:
+            List of quantum backends
+        """
+        if not refresh_cache and self._backend_cache:
+            return list(self._backend_cache.values())
+
+        params = {"include_metrics": include_metrics}
+        response = await self._client.get("/quantum/backends", params=params)
+
+        backends_response = QuantumBackendsResponse(**response.json())
+        
+        # Update cache
+        for backend in backends_response.data:
+            self._backend_cache[backend.id] = backend
+
+        return backends_response.data
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def get_backend(self, backend_id: str) -> QuantumBackend:
+        """
+        Get quantum backend details.
+
+        Args:
+            backend_id: Backend identifier
+
+        Returns:
+            Quantum backend details
+        """
+        if backend_id in self._backend_cache:
+            return self._backend_cache[backend_id]
+
+        response = await self._client.get(f"/quantum/backends/{backend_id}")
+        backend = QuantumBackend(**response.json()["data"])
+        
+        # Update cache
+        self._backend_cache[backend_id] = backend
+        
+        return backend
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def create_circuit(self, circuit: QuantumCircuitCreate) -> QuantumCircuit:
+        """
+        Create a quantum circuit.
+
+        Args:
+            circuit: Circuit creation request
+
+        Returns:
+            Created quantum circuit
+        """
+        response = await self._client.post("/quantum/circuits", data=circuit)
+        created_circuit = QuantumCircuit(**response.json()["data"])
+        
+        # Update cache
+        self._circuit_cache[created_circuit.circuit_id] = created_circuit
+        
+        return created_circuit
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def get_circuit(self, circuit_id: str) -> QuantumCircuit:
+        """
+        Get quantum circuit details.
+
+        Args:
+            circuit_id: Circuit identifier
+
+        Returns:
+            Quantum circuit details
+        """
+        if circuit_id in self._circuit_cache:
+            return self._circuit_cache[circuit_id]
+
+        response = await self._client.get(f"/quantum/circuits/{circuit_id}")
+        circuit = QuantumCircuit(**response.json()["data"])
+        
+        # Update cache
+        self._circuit_cache[circuit_id] = circuit
+        
+        return circuit
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def delete_circuit(self, circuit_id: str) -> bool:
+        """
+        Delete a quantum circuit.
+
+        Args:
+            circuit_id: Circuit identifier
+
+        Returns:
+            True if deletion was successful
+        """
+        await self._client.delete(f"/quantum/circuits/{circuit_id}")
+        
+        # Remove from cache
+        self._circuit_cache.pop(circuit_id, None)
+        
+        return True
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def execute_circuit(
+        self,
+        circuit_id: str,
+        backend_id: str,
+        shots: int = 1024,
+        optimization_level: int = 1,
+        **kwargs,
+    ) -> QuantumJob:
+        """
+        Execute a quantum circuit.
+
+        Args:
+            circuit_id: Circuit identifier
+            backend_id: Target backend identifier
+            shots: Number of shots
+            optimization_level: Optimization level (0-3)
+            **kwargs: Additional execution parameters
+
+        Returns:
+            Quantum job information
+        """
+        execution_request = QuantumExecutionRequest(
+            backend_id=backend_id,
+            shots=shots,
+            optimization={"level": optimization_level},
+            **kwargs,
+        )
+
+        response = await self._client.post(
+            f"/quantum/circuits/{circuit_id}/execute",
+            data=execution_request,
+        )
+        
+        return QuantumJob(**response.json()["data"])
+
+    @async_retry(max_attempts=10, delay=2.0)
+    async def get_job(self, job_id: str) -> QuantumJob:
+        """
+        Get quantum job status and results.
+
+        Args:
+            job_id: Job identifier
+
+        Returns:
+            Quantum job information
+        """
+        response = await self._client.get(f"/quantum/jobs/{job_id}")
+        return QuantumJob(**response.json()["data"])
+
+    async def wait_for_job(
+        self,
+        job_id: str,
+        timeout: float = 300.0,
+        poll_interval: float = 2.0,
+    ) -> QuantumJob:
+        """
+        Wait for quantum job completion.
+
+        Args:
+            job_id: Job identifier
+            timeout: Maximum wait time in seconds
+            poll_interval: Polling interval in seconds
+
+        Returns:
+            Completed quantum job
+
+        Raises:
+            TimeoutError: If job doesn't complete within timeout
+        """
+        start_time = asyncio.get_event_loop().time()
+        
+        while True:
+            job = await self.get_job(job_id)
+            
+            if job.status in ["completed", "failed", "cancelled"]:
+                return job
+            
+            elapsed = asyncio.get_event_loop().time() - start_time
+            if elapsed > timeout:
+                raise TimeoutError(f"Job {job_id} timed out after {timeout} seconds")
+            
+            # Wait before polling again
+            await asyncio.sleep(poll_interval)
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def perform_inference(
+        self,
+        input_data: Dict[str, Any],
+        inference_type: str = "probabilistic_reasoning",
+        model: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ) -> QuantumInferenceResponse:
+        """
+        Perform quantum state inference.
+
+        Args:
+            input_data: Input data for inference
+            inference_type: Type of inference
+            model: Inference model parameters
+            **kwargs: Additional inference parameters
+
+        Returns:
+            Inference results
+        """
+        inference_request = QuantumInferenceRequest(
+            input_data=input_data,
+            inference_type=inference_type,
+            model=model,
+            parameters=kwargs,
+        )
+
+        response = await self._client.post(
+            "/quantum/inference",
+            data=inference_request,
+        )
+        
+        return QuantumInferenceResponse(**response.json()["data"])
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def store_pattern(
+        self,
+        pattern_id: str,
+        pattern_data: List[float],
+        encoding_method: str = "amplitude",
+        **kwargs,
+    ) -> QuantumPattern:
+        """
+        Store a pattern in quantum memory.
+
+        Args:
+            pattern_id: Pattern identifier
+            pattern_data: Pattern data
+            encoding_method: Encoding method
+            **kwargs: Additional storage parameters
+
+        Returns:
+            Stored pattern information
+        """
+        pattern_store = QuantumPatternStore(
+            pattern={
+                "id": pattern_id,
+                "data": pattern_data,
+                "encoding": encoding_method,
+                **kwargs,
+            }
+        )
+
+        response = await self._client.post(
+            "/quantum/memory/patterns",
+            data=pattern_store,
+        )
+        
+        return QuantumPattern(**response.json()["data"])
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def recall_pattern(
+        self,
+        partial_pattern: List[Optional[float]],
+        min_similarity: float = 0.8,
+        max_patterns: int = 5,
+        **kwargs,
+    ) -> QuantumPatternRecallResponse:
+        """
+        Recall patterns from quantum memory.
+
+        Args:
+            partial_pattern: Partial pattern with null values
+            min_similarity: Minimum similarity threshold
+            max_patterns: Maximum number of patterns to return
+            **kwargs: Additional recall parameters
+
+        Returns:
+            Recalled patterns
+        """
+        recall_request = QuantumPatternRecall(
+            partial_pattern=partial_pattern,
+            constraints={
+                "min_similarity": min_similarity,
+                "max_patterns": max_patterns,
+            },
+            options=kwargs,
+        )
+
+        response = await self._client.post(
+            "/quantum/memory/recall",
+            data=recall_request,
+        )
+        
+        return QuantumPatternRecallResponse(**response.json()["data"])
+
+    async def stream_job_updates(self, job_id: str) -> AsyncIterator[QuantumJob]:
+        """
+        Stream real-time updates for a quantum job.
+
+        Args:
+            job_id: Job identifier
+
+        Yields:
+            Quantum job updates
+        """
+        # Connect to WebSocket
+        async with self._client.connect_websocket() as ws:
+            # Subscribe to job updates
+            await ws.subscribe([f"quantum_job_updates:{job_id}"])
+            
+            # Stream updates
+            async for message in ws.stream():
+                if message["type"] == "job_update":
+                    yield QuantumJob(**message["data"])
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def cancel_job(self, job_id: str) -> bool:
+        """
+        Cancel a quantum job.
+
+        Args:
+            job_id: Job identifier
+
+        Returns:
+            True if cancellation was successful
+        """
+        response = await self._client.post(f"/quantum/jobs/{job_id}/cancel")
+        return response.json()["success"]
+
+    @async_retry(max_attempts=3, delay=1.0)
+    async def estimate_execution(
+        self,
+        circuit_id: str,
+        backend_id: str,
+        shots: int = 1024,
+    ) -> Dict[str, Any]:
+        """
+        Estimate execution time and cost.
+
+        Args:
+            circuit_id: Circuit identifier
+            backend_id: Target backend identifier
+            shots: Number of shots
+
+        Returns:
+            Execution estimation
+        """
+        params = {
+            "circuit_id": circuit_id,
+            "backend_id": backend_id,
+            "shots": shots,
+        }
+        
+        response = await self._client.get("/quantum/estimate", params=params)
+        return response.json()["data"]
+
+    # Batch operations
+    @async_retry(max_attempts=3, delay=1.0)
+    async def batch_execute(
+        self,
+        circuits: List[Dict[str, Any]],
+        backend_id: str,
+        shots: int = 1024,
+        max_concurrent: int = 5,
+    ) -> List[QuantumJob]:
+        """
+        Execute multiple circuits in batch.
+
+        Args:
+            circuits: List of circuit definitions
+            backend_id: Target backend identifier
+            shots: Number of shots per circuit
+            max_concurrent: Maximum concurrent executions
+
+        Returns:
+            List of quantum jobs
+        """
+        # Create circuits
+        circuit_tasks = [
+            self.create_circuit(QuantumCircuitCreate(**circuit))
+            for circuit in circuits
+        ]
+        
+        created_circuits = await asyncio.gather(*circuit_tasks)
+        
+        # Execute circuits with concurrency control
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def execute_with_semaphore(circuit: QuantumCircuit):
+            async with semaphore:
+                return await self.execute_circuit(
+                    circuit_id=circuit.circuit_id,
+                    backend_id=backend_id,
+                    shots=shots,
+                )
+        
+        execution_tasks = [
+            execute_with_semaphore(circuit)
+            for circuit in created_circuits
+        ]
+        
+        return await asyncio.gather(*execution_tasks)
+
+    # Utility methods
+    async def get_default_backend(self) -> QuantumBackend:
+        """Get default quantum backend."""
+        config = self._client.config
+        default_backend_id = config.quantum_default_backend
+        
+        try:
+            return await self.get_backend(default_backend_id)
+        except QuenneAPIError:
+            # Fallback to first available backend
+            backends = await self.list_backends()
+            available = [b for b in backends if b.status == "available"]
+            
+            if not available:
+                raise RuntimeError("No available quantum backends")
+            
+            return available[0]
+
+    def clear_cache(self):
+        """Clear API cache."""
+        self._circuit_cache.clear()
+        self._backend_cache.clear()
+        logger.debug("Quantum API cache cleared")
+
+    # Property accessors
+    @property
+    def cached_circuits(self) -> List[QuantumCircuit]:
+        """Get list of cached circuits."""
+        return list(self._circuit_cache.values())
+
+    @property
+    def cached_backends(self) -> List[QuantumBackend]:
+        """Get list of cached backends."""
+        return list(self._backend_cache.values())
+```
+
+2.8 WebSocket Client: quenne/websocket.py
+
+```python
+"""WebSocket client for real-time updates."""
+
+import asyncio
+import json
+import logging
+from typing import Any, Dict, List, Optional, AsyncIterator
+from dataclasses import dataclass
+
+import websockets
+from websockets.exceptions import ConnectionClosed
+
+from .config import ClientConfig
+from .exceptions import QuenneAPIError
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass
+class WebSocketMessage:
+    """WebSocket message wrapper."""
+    type: str
+    data: Dict[str, Any]
+    timestamp: int
+    channel: Optional[str] = None
+
+
+class WebSocketClient:
+    """WebSocket client for QUENNE real-time updates."""
+
+    def __init__(self, config: ClientConfig):
+        """Initialize WebSocket client."""
+        self.config = config
+        self._websocket: Optional[websockets.WebSocketClientProtocol] = None
+        self._connected = False
+        self._message_queue: asyncio.Queue = asyncio.Queue(maxsize=1000)
+        self._subscriptions: List[str] = []
+        self._reconnect_delay = 1.0
+        self._max_reconnect_delay = 30.0
+
+    async def connect(self):
+        """Connect to QUENNE WebSocket server."""
+        if self._connected:
+            return
+
+        # Build WebSocket URL
+        base_url = self.config.base_url.replace("https://", "wss://").replace("http://", "ws://")
+        ws_url = base_url.replace("/api/v1", "/ws/v1")
+        
+        # Add authentication
+        if self.config.token:
+            ws_url += f"?token={self.config.token}"
+        elif self.config.api_key:
+            ws_url += f"?api_key={self.config.api_key}"
+
+        logger.info(f"Connecting to WebSocket: {ws_url}")
+
+        try:
+            self._websocket = await websockets.connect(
+                ws_url,
+                ping_interval=30,
+                ping_timeout=10,
+                close_timeout=1,
+                max_size=2**20,  # 1MB
+            )
+            
+            self._connected = True
+            self._reconnect_delay = 1.0
+            
+            # Start message handler
+            asyncio.create_task(self._message_handler())
+            
+            logger.info("WebSocket connected successfully")
+            
+        except Exception as e:
+            logger.error(f"Failed to connect to WebSocket: {e}")
+            raise ConnectionError(f"WebSocket connection failed: {e}")
+
+    async def close(self):
+        """Close WebSocket connection."""
+        if self._websocket:
+            await self._websocket.close()
+            self._websocket = None
+        
+        self._connected = False
+        self._subscriptions.clear()
+        logger.info("WebSocket connection closed")
+
+    async def _message_handler(self):
+        """Handle incoming WebSocket messages."""
+        while self._connected and self._websocket:
+            try:
+                message = await self._websocket.recv()
+                await self._process_message(message)
+                
+            except ConnectionClosed as e:
+                logger.warning(f"WebSocket connection closed: {e}")
+                await self._handle_disconnection()
+                break
+                
+            except Exception as e:
+                logger.error(f"Error processing WebSocket message: {e}")
+                continue
+
+    async def _process_message(self, message: str):
+        """Process incoming WebSocket message."""
+        try:
+            data = json.loads(message)
+            
+            # Create message wrapper
+            ws_message = WebSocketMessage(
+                type=data.get("type", "unknown"),
+                data=data.get("data", {}),
+                timestamp=data.get("timestamp", 0),
+                channel=data.get("channel"),
+            )
+            
+            # Put message in queue
+            try:
+                self._message_queue.put_nowait(ws_message)
+            except asyncio.QueueFull:
+                logger.warning("WebSocket message queue full, dropping message")
+                
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse WebSocket message: {e}")
+
+    async def _handle_disconnection(self):
+        """Handle WebSocket disconnection."""
+        self._connected = False
+        
+        # Attempt reconnection
+        await self._reconnect()
+
+    async def _reconnect(self):
+        """Attempt to reconnect to WebSocket."""
+        while not self._connected:
+            try:
+                logger.info(f"Attempting WebSocket reconnection in {self._reconnect_delay}s")
+                await asyncio.sleep(self._reconnect_delay)
+                
+                await self.connect()
+                
+                # Resubscribe to channels
+                if self._subscriptions:
+                    await self.subscribe(self._subscriptions)
+                
+                # Exponential backoff reset
+                self._reconnect_delay = 1.0
+                return
+                
+            except Exception as e:
+                logger.error(f"Reconnection attempt failed: {e}")
+                
+                # Exponential backoff
+                self._reconnect_delay = min(
+                    self._reconnect_delay * 2,
+                    self._max_reconnect_delay
+                )
+
+    async def subscribe(self, channels: List[str]):
+        """
+        Subscribe to WebSocket channels.
+        
+        Args:
+            channels: List of channel names to subscribe to
+        """
+        if not self._connected:
+            raise ConnectionError("WebSocket not connected")
+        
+        subscription_message = {
+            "type": "subscribe",
+            "channels": channels,
+            "timestamp": asyncio.get_event_loop().time(),
+        }
+        
+        await self._websocket.send(json.dumps(subscription_message))
+        
+        # Update subscriptions
+        self._subscriptions.extend(channels)
+        self._subscriptions = list(set(self._subscriptions))
+        
+        logger.info(f"Subscribed to channels: {channels}")
+
+    async def unsubscribe(self, channels: List[str]):
+        """
+        Unsubscribe from WebSocket channels.
+        
+        Args:
+            channels: List of channel names to unsubscribe from
+        """
+        if not self._connected:
+            raise ConnectionError("WebSocket not connected")
+        
+        unsubscribe_message = {
+            "type": "unsubscribe",
+            "channels": channels,
+            "timestamp": asyncio.get_event_loop().time(),
+        }
+        
+        await self._websocket.send(json.dumps(unsubscribe_message))
+        
+        # Update subscriptions
+        self._subscriptions = [c for c in self._subscriptions if c not in channels]
+        
+        logger.info(f"Unsubscribed from channels: {channels}")
+
+    async def send(self, message: Dict[str, Any]):
+        """
+        Send message through WebSocket.
+        
+        Args:
+            message: Message to send
+        """
+        if not self._connected:
+            raise ConnectionError("WebSocket not connected")
+        
+        await self._websocket.send(json.dumps(message))
+
+    async def stream(self) -> AsyncIterator[WebSocketMessage]:
+        """
+        Stream WebSocket messages.
+        
+        Yields:
+            WebSocket messages
+        """
+        while self._connected:
+            try:
+                message = await self._message_queue.get()
+                yield message
+                self._message_queue.task_done()
+                
+            except asyncio.CancelledError:
+                break
+            except Exception as e:
+                logger.error(f"Error in message stream: {e}")
+                break
+
+    # Convenience methods for specific message types
+    async def stream_quantum_updates(self) -> AsyncIterator[Dict[str, Any]]:
+        """Stream quantum layer updates."""
+        await self.subscribe(["quantum_job_updates", "quantum_backend_status"])
+        
+        async for message in self.stream():
+            if message.channel in ["quantum_job_updates", "quantum_backend_status"]:
+                yield message.data
+
+    async def stream_neuromorphic_updates(self) -> AsyncIterator[Dict[str, Any]]:
+        """Stream neuromorphic layer updates."""
+        await self.subscribe(["neuromorphic_spikes", "neuromorphic_learning"])
+        
+        async for message in self.stream():
+            if message.channel in ["neuromorphic_spikes", "neuromorphic_learning"]:
+                yield message.data
+
+    async def stream_edge_updates(self) -> AsyncIterator[Dict[str, Any]]:
+        """Stream edge layer updates."""
+        await self.subscribe(["edge_sensor_data", "edge_task_updates"])
+        
+        async for message in self.stream():
+            if message.channel in ["edge_sensor_data", "edge_task_updates"]:
+                yield message.data
+
+    async def stream_system_metrics(self) -> AsyncIterator[Dict[str, Any]]:
+        """Stream system metrics."""
+        await self.subscribe(["system_metrics", "system_alerts"])
+        
+        async for message in self.stream():
+            if message.channel in ["system_metrics", "system_alerts"]:
+                yield message.data
+
+    # Context manager support
+    async def __aenter__(self):
+        """Async context manager entry."""
+        await self.connect()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
+
+    # Property accessors
+    @property
+    def is_connected(self) -> bool:
+        """Check if WebSocket is connected."""
+        return self._connected
+
+    @property
+    def subscriptions(self) -> List[str]:
+        """Get current subscriptions."""
+        return self._subscriptions.copy()
+```
+
+---
+
+3. GENERATION SCRIPT
+
+generate_client.py
+
+```python
+#!/usr/bin/env python3
+"""Generate QUENNE Python client from OpenAPI specification."""
+
+import os
+import sys
+import json
+import yaml
+import subprocess
+from pathlib import Path
+from typing import Dict, Any, List
+from dataclasses import dataclass
+
+import httpx
+from jinja2 import Environment, FileSystemLoader
+
+
+@dataclass
+class OpenAPIParameter:
+    """OpenAPI parameter definition."""
+    name: str
+    in_location: str  # "query", "path", "header", "cookie"
+    required: bool
+    schema: Dict[str, Any]
+    description: str = ""
+    
+    @property
+    def python_type(self) -> str:
+        """Convert OpenAPI schema to Python type hint."""
+        schema_type = self.schema.get("type", "string")
+        
+        if schema_type == "integer":
+            return "int"
+        elif schema_type == "number":
+            return "float"
+        elif schema_type == "boolean":
+            return "bool"
+        elif schema_type == "array":
+            items = self.schema.get("items", {})
+            item_type = items.get("type", "string")
+            return f"List[{self._map_type(item_type)}]"
+        else:
+            return "str"
+    
+    def _map_type(self, openapi_type: str) -> str:
+        """Map OpenAPI type to Python type."""
+        type_map = {
+            "integer": "int",
+            "number": "float",
+            "boolean": "bool",
+            "string": "str",
+            "object": "Dict[str, Any]",
+            "array": "List",
+        }
+        return type_map.get(openapi_type, "Any")
+
+
+@dataclass
+class OpenAPIOperation:
+    """OpenAPI operation definition."""
+    method: str
+    path: str
+    operation_id: str
+    summary: str
+    description: str
+    parameters: List[OpenAPIParameter]
+    request_body: Optional[Dict[str, Any]] = None
+    responses: Dict[str, Any] = None
+    
+    @property
+    def function_name(self) -> str:
+        """Convert operationId to Python function name."""
+        # Convert camelCase to snake_case
+        import re
+        name = re.sub(r'(?<!^)(?=[A-Z])', '_', self.operation_id).lower()
+        return name
+    
+    @property
+    def async_function_name(self) -> str:
+        """Get async function name."""
+        return f"async_{self.function_name}"
+    
+    @property
+    def path_params(self) -> List[OpenAPIParameter]:
+        """Get path parameters."""
+        return [p for p in self.parameters if p.in_location == "path"]
+    
+    @property
+    def query_params(self) -> List[OpenAPIParameter]:
+        """Get query parameters."""
+        return [p for p in self.parameters if p.in_location == "query"]
+
+
+@dataclass
+class OpenAPITag:
+    """OpenAPI tag definition."""
+    name: str
+    description: str
+    operations: List[OpenAPIOperation]
+
+
+class ClientGenerator:
+    """Generate Python client from OpenAPI specification."""
+    
+    def __init__(self, openapi_spec: Dict[str, Any], output_dir: Path):
+        """Initialize generator."""
+        self.spec = openapi_spec
+        self.output_dir = output_dir
+        self.templates_dir = Path(__file__).parent / "templates"
+        
+        # Setup Jinja2 environment
+        self.env = Environment(
+            loader=FileSystemLoader(self.templates_dir),
+            trim_blocks=True,
+            lstrip_blocks=True,
+        )
+        
+        # Create output directories
+        self._create_directories()
+    
+    def _create_directories(self):
+        """Create output directory structure."""
+        directories = [
+            self.output_dir,
+            self.output_dir / "quenne",
+            self.output_dir / "quenne" / "models",
+            self.output_dir / "quenne" / "api",
+            self.output_dir / "quenne" / "utils",
+            self.output_dir / "quenne" / "types",
+            self.output_dir / "tests",
+            self.output_dir / "examples",
+            self.output_dir / "docs",
+        ]
+        
+        for directory in directories:
+            directory.mkdir(parents=True, exist_ok=True)
+    
+    def parse_spec(self) -> List[OpenAPITag]:
+        """Parse OpenAPI specification."""
+        tags = []
+        
+        # Get tags from spec
+        spec_tags = self.spec.get("tags", [])
+        
+        for tag_info in spec_tags:
+            tag_name = tag_info["name"]
+            tag_description = tag_info.get("description", "")
+            
+            # Find operations for this tag
+            operations = []
+            for path, methods in self.spec.get("paths", {}).items():
+                for method, operation in methods.items():
+                    if tag_name in operation.get("tags", []):
+                        ops = self._parse_operation(method, path, operation)
+                        operations.append(ops)
+            
+            tag = OpenAPITag(
+                name=tag_name,
+                description=tag_description,
+                operations=operations,
+            )
+            tags.append(tag)
+        
+        return tags
+    
+    def _parse_operation(self, method: str, path: str, operation: Dict[str, Any]) -> OpenAPIOperation:
+        """Parse OpenAPI operation."""
+        # Parse parameters
+        parameters = []
+        for param in operation.get("parameters", []):
+            param_obj = OpenAPIParameter(
+                name=param["name"],
+                in_location=param["in"],
+                required=param.get("required", False),
+                schema=param.get("schema", {}),
+                description=param.get("description", ""),
+            )
+            parameters.append(param_obj)
+        
+        # Parse request body
+        request_body = None
+        if "requestBody" in operation:
+            request_body = operation["requestBody"]
+        
+        # Parse responses
+        responses = operation.get("responses", {})
+        
+        return OpenAPIOperation(
+            method=method.upper(),
+            path=path,
+            operation_id=operation["operationId"],
+            summary=operation.get("summary", ""),
+            description=operation.get("description", ""),
+            parameters=parameters,
+            request_body=request_body,
+            responses=responses,
+        )
+    
+    def generate_models(self):
+        """Generate Pydantic models from OpenAPI schemas."""
+        schemas = self.spec.get("components", {}).get("schemas", {})
+        
+        for schema_name, schema_def in schemas.items():
+            self._generate_model(schema_name, schema_def)
+    
+    def _generate_model(self, name: str, schema: Dict[str, Any]):
+        """Generate a single Pydantic model."""
+        template = self.env.get_template("model.py.j2")
+        
+        # Prepare template context
+        context = {
+            "model_name": name,
+            "schema": schema,
+            "properties": schema.get("properties", {}),
+            "required": schema.get("required", []),
+            "description": schema.get("description", ""),
+        }
+        
+        # Render template
+        output = template.render(**context)
+        
+        # Write to file
+        filename = f"{self._to_snake_case(name)}.py"
+        filepath = self.output_dir / "quenne" / "models" / filename
+        
+        with open(filepath, "w") as f:
+            f.write(output)
+    
+    def generate_api_modules(self, tags: List[OpenAPITag]):
+        """Generate API modules for each tag."""
+        for tag in tags:
+            self._generate_api_module(tag)
+    
+    def _generate_api_module(self, tag: OpenAPITag):
+        """Generate API module for a tag."""
+        template = self.env.get_template("api_module.py.j2")
+        
+        # Prepare template context
+        context = {
+            "tag_name": tag.name,
+            "tag_description": tag.description,
+            "operations": tag.operations,
+            "module_name": self._to_snake_case(tag.name),
+        }
+        
+        # Render template
+        output = template.render(**context)
+        
+        # Write to file
+        filename = f"{self._to_snake_case(tag.name)}.py"
+        filepath = self.output_dir / "quenne" / "api" / filename
+        
+        with open(filepath, "w") as f:
+            f.write(output)
+    
+    def generate_client(self, tags: List[OpenAPITag]):
+        """Generate main client file."""
+        template = self.env.get_template("client.py.j2")
+        
+        # Prepare template context
+        context = {
+            "tags": tags,
+            "api_modules": [self._to_snake_case(tag.name) for tag in tags],
+        }
+        
+        # Render template
+        output = template.render(**context)
+        
+        # Write to file
+        filepath = self.output_dir / "quenne" / "client.py"
+        
+        with open(filepath, "w") as f:
+            f.write(output)
+    
+    def generate_init_files(self):
+        """Generate __init__.py files."""
+        # Main package __init__.py
+        init_template = self.env.get_template("init.py.j2")
+        
+        # Get all model names
+        model_files = list((self.output_dir / "quenne" / "models").glob("*.py"))
+        model_names = [f.stem for f in model_files if f.stem != "__init__"]
+        
+        # Get all API module names
+        api_files = list((self.output_dir / "quenne" / "api").glob("*.py"))
+        api_names = [f.stem for f in api_files if f.stem != "__init__"]
+        
+        context = {
+            "model_names": model_names,
+            "api_names": api_names,
+        }
+        
+        # Write main __init__.py
+        main_init = init_template.render(**context)
+        with open(self.output_dir / "quenne" / "__init__.py", "w") as f:
+            f.write(main_init)
+        
+        # Write subpackage __init__.py files
+        subpackages = ["models", "api", "utils", "types"]
+        for subpackage in subpackages:
+            sub_init = f"# {subpackage} package\n"
+            filepath = self.output_dir / "quenne" / subpackage / "__init__.py"
+            with open(filepath, "w") as f:
+                f.write(sub_init)
+    
+    def generate_setup_files(self):
+        """Generate setup.py and related files."""
+        # setup.py
+        template = self.env.get_template("setup.py.j2")
+        context = {
+            "version": self.spec.get("info", {}).get("version", "1.0.0"),
+            "description": self.spec.get("info", {}).get("description", ""),
+        }
+        
+        output = template.render(**context)
+        with open(self.output_dir / "setup.py", "w") as f:
+            f.write(output)
+        
+        # requirements.txt
+        requirements = [
+            "httpx>=0.24.0",
+            "pydantic>=2.0.0",
+            "typing-extensions>=4.5.0",
+            "python-dateutil>=2.8.2",
+            "numpy>=1.24.0",
+            "websockets>=12.0",
+            "tenacity>=8.2.0",
+        ]
+        
+        with open(self.output_dir / "requirements.txt", "w") as f:
+            f.write("\n".join(requirements))
+    
+    def generate_tests(self, tags: List[OpenAPITag]):
+        """Generate test files."""
+        template = self.env.get_template("test_client.py.j2")
+        
+        for tag in tags:
+            context = {
+                "tag_name": tag.name,
+                "module_name": self._to_snake_case(tag.name),
+                "operations": tag.operations,
+            }
+            
+            output = template.render(**context)
+            
+            filename = f"test_{self._to_snake_case(tag.name)}.py"
+            filepath = self.output_dir / "tests" / filename
+            
+            with open(filepath, "w") as f:
+                f.write(output)
+    
+    def generate_examples(self, tags: List[OpenAPITag]):
+        """Generate example files."""
+        template = self.env.get_template("example.py.j2")
+        
+        for tag in tags:
+            context = {
+                "tag_name": tag.name,
+                "module_name": self._to_snake_case(tag.name),
+                "operations": tag.operations[:3],  # First 3 operations
+            }
+            
+            output = template.render(**context)
+            
+            filename = f"{self._to_snake_case(tag.name)}_example.py"
+            filepath = self.output_dir / "examples" / filename
+            
+            with open(filepath, "w") as f:
+                f.write(output)
+    
+    def _to_snake_case(self, text: str) -> str:
+        """Convert text to snake_case."""
+        import re
+        text = re.sub(r'(?<!^)(?=[A-Z])', '_', text).lower()
+        text = text.replace('-', '_').replace(' ', '_')
+        return text
+    
+    def run(self):
+        """Run the full generation process."""
+        print("Parsing OpenAPI specification...")
+        tags = self.parse_spec()
+        
+        print("Generating models...")
+        self.generate_models()
+        
+        print("Generating API modules...")
+        self.generate_api_modules(tags)
+        
+        print("Generating client...")
+        self.generate_client(tags)
+        
+        print("Generating __init__.py files...")
+        self.generate_init_files()
+        
+        print("Generating setup files...")
+        self.generate_setup_files()
+        
+        print("Generating tests...")
+        self.generate_tests(tags)
+        
+        print("Generating examples...")
+        self.generate_examples(tags)
+        
+        print("Generation complete!")
+
+
+def main():
+    """Main entry point."""
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Generate QUENNE Python client")
+    parser.add_argument(
+        "--spec",
+        type=str,
+        default="quenne-openapi.yaml",
+        help="OpenAPI specification file (YAML or JSON)",
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        default="./quenne-python-client",
+        help="Output directory",
+    )
+    parser.add_argument(
+        "--url",
+        type=str,
+        help="URL to fetch OpenAPI specification from",
+    )
+    
+    args = parser.parse_args()
+    
+    # Load OpenAPI specification
+    if args.url:
+        print(f"Fetching specification from {args.url}...")
+        response = httpx.get(args.url)
+        spec = response.json()
+    else:
+        spec_path = Path(args.spec)
+        if not spec_path.exists():
+            print(f"Error: Specification file not found: {spec_path}")
+            sys.exit(1)
+        
+        with open(spec_path, "r") as f:
+            if spec_path.suffix.lower() == ".json":
+                spec = json.load(f)
+            else:
+                spec = yaml.safe_load(f)
+    
+    # Create output directory
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate client
+    generator = ClientGenerator(spec, output_dir)
+    generator.run()
+    
+    print(f"\nClient generated in: {output_dir.absolute()}")
+    print("\nNext steps:")
+    print(f"1. cd {output_dir}")
+    print("2. pip install -e .")
+    print("3. python examples/basic_usage.py")
+
+
+if __name__ == "__main__":
+    main()
+```
+
+---
+
+4. TEMPLATE FILES
+
+Create a templates/ directory with these files:
+
+templates/model.py.j2
+
+```python
+"""{{ model_name }} model."""
+
+from typing import List, Dict, Any, Optional, Union
+from datetime import datetime
+from enum import Enum
+
+from pydantic import BaseModel, Field, validator
+
+
+class {{ model_name }}(BaseModel):
+    """{{ description }}."""
+    
+    {% for prop_name, prop_schema in properties.items() %}
+    {{ prop_name }}: {{ self.get_python_type(prop_schema) }} = Field(
+        {{ self.get_default_value(prop_schema) }},
+        description="{{ prop_schema.get('description', '') }}"
+    )
+    {% endfor %}
+    
+    class Config:
+        """Pydantic model configuration."""
+        use_enum_values = True
+        validate_assignment = True
+    
+    {% if 'required' in schema %}
+    @validator('*')
+    def validate_required_fields(cls, v, field):
+        """Validate required fields."""
+        if field.name in {{ required }} and v is None:
+            raise ValueError(f"{field.name} is required")
+        return v
+    {% endif %}
+```
+
+templates/api_module.py.j2
+
+```python
+"""{{ tag_name }} API module."""
+
+import asyncio
+import logging
+from typing import List, Dict, Any, Optional, AsyncIterator
+
+from ..client import QuenneClient
+from ..exceptions import QuenneAPIError
+from ..utils.async_utils import async_retry
+
+logger = logging.getLogger(__name__)
+
+
+class {{ tag_name|title }}API:
+    """{{ tag_description }}."""
+    
+    def __init__(self, client: QuenneClient):
+        """Initialize {{ tag_name }} API client."""
+        self._client = client
+    
+    {% for operation in operations %}
+    @async_retry(max_attempts=3, delay=1.0)
+    async def {{ operation.function_name }}(
+        self,
+        {% for param in operation.parameters %}
+        {{ param.name }}: {{ param.python_type }}{% if not param.required %} = None{% endif %},
+        {% endfor %}
+        **kwargs,
+    ) -> Dict[str, Any]:
+        """
+        {{ operation.summary }}.
+        
+        {{ operation.description }}
+        
+        {% for param in operation.parameters %}
+        Args:
+            {{ param.name }}: {{ param.description }}
+        {% endfor %}
+        
+        Returns:
+            API response
+        """
+        # Build path
+        path = "{{ operation.path }}"
+        {% for param in operation.path_params %}
+        path = path.replace("{{ '{' + param.name + '}' }}", str({{ param.name }}))
+        {% endfor %}
+        
+        # Build query parameters
+        params = {}
+        {% for param in operation.query_params %}
+        if {{ param.name }} is not None:
+            params["{{ param.name }}"] = {{ param.name }}
+        {% endfor %}
+        
+        # Make request
+        response = await self._client.request(
+            method="{{ operation.method }}",
+            endpoint=path,
+            params=params,
+            **kwargs,
+        )
+        
+        return response.json()
+    {% endfor %}
+```
+
+templates/client.py.j2
+
+```python
+"""Main QUENNE client implementation."""
+
+import asyncio
+import logging
+from typing import Optional
+
+import httpx
+
+from .config import ClientConfig
+from .exceptions import QuenneAPIError
+{% for module in api_modules %}
+from .api.{{ module }} import {{ module|title }}API
+{% endfor %}
+
+logger = logging.getLogger(__name__)
+
+
+class QuenneClient:
+    """Main client for interacting with the QUENNE API."""
+    
+    def __init__(
+        self,
+        api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
+        timeout: float = 30.0,
+        **kwargs,
+    ):
+        """
+        Initialize QUENNE client.
+        
+        Args:
+            api_key: API key for authentication
+            base_url: Base URL for API requests
+            timeout: Request timeout in seconds
+            **kwargs: Additional configuration options
+        """
+        self._config = ClientConfig(
+            api_key=api_key,
+            base_url=base_url,
+            timeout=timeout,
+            **kwargs,
+        )
+        
+        # Initialize HTTP client
+        self._client = httpx.AsyncClient(
+            base_url=self._config.base_url,
+            timeout=self._config.timeout,
+            headers=self._build_headers(),
+        )
+        
+        # Initialize API modules
+        {% for module in api_modules %}
+        self.{{ module }} = {{ module|title }}API(self)
+        {% endfor %}
+    
+    def _build_headers(self) -> Dict[str, str]:
+        """Build default headers for API requests."""
+        headers = {
+            "User-Agent": f"quenne-python-client/{self._config.version}",
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-API-Version": "1.0",
+        }
+        
+        if self._config.api_key:
+            headers["X-API-Key"] = self._config.api_key
+        
+        return headers
+    
+    async def request(self, method: str, endpoint: str, **kwargs):
+        """
+        Make an authenticated request to the QUENNE API.
+        
+        Args:
+            method: HTTP method
+            endpoint: API endpoint
+            **kwargs: Additional arguments for httpx request
+            
+        Returns:
+            HTTP response
+            
+        Raises:
+            QuenneAPIError: For API errors
+        """
+        try:
+            response = await self._client.request(
+                method=method,
+                url=endpoint,
+                **kwargs,
+            )
+            response.raise_for_status()
+            return response
+            
+        except httpx.HTTPError as e:
+            raise QuenneAPIError(f"API request failed: {e}")
+    
+    async def close(self):
+        """Close the client connection."""
+        await self._client.aclose()
+    
+    async def __aenter__(self):
+        """Async context manager entry."""
+        return self
+    
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        """Async context manager exit."""
+        await self.close()
+```
+
+---
+
+5. INSTALLATION & USAGE
+
+Installation Instructions
+
+```bash
+# Clone the repository
+git clone https://github.com/QUENNE-Institute/quenne-python-client.git
+cd quenne-python-client
+
+# Install in development mode
+pip install -e .
+
+# Install with all optional dependencies
+pip install -e .[quantum,neuromorphic,edge,dev]
+
+# Run tests
+pytest
+
+# Generate documentation
+cd docs
+make html
+```
+
+Basic Usage Example
+
+```python
+"""Basic usage example."""
+
+import asyncio
+import os
+from quenne import QuenneClient
+from quenne.models.quantum import QuantumCircuitCreate
+
+async def main():
+    # Initialize client with API key from environment
+    client = QuenneClient(
+        api_key=os.getenv("QUENNE_API_KEY"),
+        base_url="https://api.dev.quenne.institute.jp/api/v1",
+    )
+    
+    # Check system health
+    health = await client.homeostasis.get_health()
+    print(f"System health: {health.overall_health}")
+    
+    # List quantum backends
+    backends = await client.quantum.list_backends()
+    print(f"Available backends: {[b.name for b in backends]}")
+    
+    # Create and execute a quantum circuit
+    circuit = QuantumCircuitCreate(
+        name="test_circuit",
+        qasm="""
+        OPENQASM 2.0;
+        include "qelib1.inc";
+        qreg q[2];
+        creg c[2];
+        h q[0];
+        cx q[0], q[1];
+        measure q -> c;
+        """
+    )
+    
+    created = await client.quantum.create_circuit(circuit)
+    print(f"Created circuit: {created.circuit_id}")
+    
+    # Execute on simulator
+    job = await client.quantum.execute_circuit(
+        circuit_id=created.circuit_id,
+        backend_id="simulator_40q",
+        shots=1024,
+    )
+    
+    print(f"Job submitted: {job.job_id}")
+    
+    # Wait for completion
+    result = await client.quantum.wait_for_job(job.job_id)
+    print(f"Job completed with results: {result.results.counts}")
+    
+    # Close client
+    await client.close()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+---
+
+6. NEXT STEPS
+
+With the Python client SDK generated, here are the next implementation steps:
+
+1. Generate TypeScript/JavaScript Client using OpenAPI Generator
+2. Generate Go Client for systems programming
+3. Generate Java Client for enterprise integration
+4. Create API Gateway Configuration (Kong, NGINX, AWS API Gateway)
+5. Generate Database Schema from API models
+6. Create Docker containers for easy deployment
+7. Generate CI/CD pipelines for automated testing and deployment
+8. Create comprehensive documentation with Sphinx/ReadTheDocs
+9. Generate Terraform modules for infrastructure as code
+10. Create Kubernetes manifests for cloud deployment.
